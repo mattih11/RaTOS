@@ -1,0 +1,100 @@
+#
+# RaTOS Real-Time OS - Build and Publish
+#
+# Builds the RaTOS developer container image (EVL/Xenomai 4) and publishes:
+#   - Docker image to GHCR (all triggers)
+#   - GitHub Release assets on version tags (v*)
+#   - Workflow artifacts on non-tag pushes (for downstream CI consumption)
+#
+# Artifact contract (do not rename without updating consumers):
+#   vmlinuz                        - EVL kernel image
+#   initrd.img                     - initrd for QEMU boot
+#   ratos-dev-image.docker-archive.gz - Docker rootfs archive
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+name: Build and Publish
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write   # create releases and upload assets
+  packages: write   # push to GHCR
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # kas-container is the shell wrapper that runs the kas-isar Docker image.
+      # pip install kas provides both the `kas` Python tool and `kas-container`.
+      - name: Install kas
+        run: pip install kas==5.1
+
+      # kas-container --isar spawns ghcr.io/siemens/kas/kas-isar:5.1 with
+      # --privileged to support ISAR's chroot-based build system.
+      - name: Build RaTOS developer image
+        run: kas-container --isar build kas.yaml:kas/board/container-amd64.yaml
+
+      # Copy build outputs to canonical names required by the integration contract.
+      - name: Stage artifacts with canonical names
+        run: |
+          DEPLOY="build/tmp/deploy/images/container-amd64"
+          cp "${DEPLOY}/ratos-dev-image-ratos-container-amd64-vmlinuz"    vmlinuz
+          cp "${DEPLOY}/ratos-dev-image-ratos-container-amd64-initrd.img" initrd.img
+          cp "${DEPLOY}/ratos-dev-image-ratos-amd64.docker-archive.gz"    ratos-dev-image.docker-archive.gz
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push Docker image to GHCR
+        run: |
+          IMAGE_REPO="ghcr.io/${{ github.repository_owner }}/ratos-dev-image"
+          GIT_SHA="${{ github.sha }}"
+
+          # docker load prints either:
+          #   "Loaded image: <name>:<tag>"   (archive has a tag)
+          #   "Loaded image ID: sha256:..."  (archive has no tag)
+          LOADED=$(docker load < ratos-dev-image.docker-archive.gz \
+            | grep "Loaded image" | tail -1 | sed 's/.*: //')
+
+          docker tag "${LOADED}" "${IMAGE_REPO}:latest"
+          docker tag "${LOADED}" "${IMAGE_REPO}:${GIT_SHA}"
+          docker push "${IMAGE_REPO}:latest"
+          docker push "${IMAGE_REPO}:${GIT_SHA}"
+
+      # On version tags: create a GitHub Release and attach the three artifacts.
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            vmlinuz
+            initrd.img
+            ratos-dev-image.docker-archive.gz
+
+      # On non-tag events: upload as a workflow artifact so downstream CI
+      # (e.g. CommRaT) can fetch via dawidd6/action-download-artifact.
+      - name: Upload workflow artifacts
+        if: "!startsWith(github.ref, 'refs/tags/')"
+        uses: actions/upload-artifact@v4
+        with:
+          name: ratos-evl-artifacts
+          path: |
+            vmlinuz
+            initrd.img
+            ratos-dev-image.docker-archive.gz
+          retention-days: 7
