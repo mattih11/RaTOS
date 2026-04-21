@@ -18,6 +18,11 @@ DEPENDS = "rack reflect-cpp sertial commrat"
 # (Does NOT install efibootguard-tools into the target rootfs — only ensures build+deploy.)
 DEPENDS += "efibootguard"
 
+# Locally-built packages that must land in isar-apt before do_rootfs_install runs.
+# image.bbclass cannot resolve Debian package names → recipe PNs automatically, so
+# we declare them explicitly here (same pattern as in ratos-dev-image.bb).
+DEPENDS += "linux-xenomai-4 libevl customizations sshd-regen-keys expand-on-first-boot"
+
 # Pull in the full Xenomai 4 / EVL test suite from upstream
 IMAGE_INSTALL:append:xenomai4 = " libevl-test"
 

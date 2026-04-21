@@ -1,0 +1,13 @@
+# QEMU-bootable disk image for container-amd64
+#
+# Single ext4 partition (no bootloader). Boot with:
+#   qemu-system-x86_64 \
+#     -kernel vmlinuz -initrd initrd.img \
+#     -hda ratos-dev-image-container-amd64.wic \
+#     -append "root=LABEL=root rw console=ttyS0,115200 console=tty0"
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+part / --source rootfs --fstype=ext4 --label root --align 4096 --size 4G
+
+bootloader
