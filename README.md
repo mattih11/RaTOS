@@ -1,9 +1,9 @@
-# RaTOS — Real-Time OS for Odroid H4
+# RaTOS — Real-Time OS
 
-RaTOS is an ISAR-based Debian Trixie image for the **Odroid H4** (Intel Alder Lake-N, amd64),
-running a Xenomai 4 / EVL real-time kernel. It uses **EFI Boot Guard** (from
-[isar-cip-core](https://gitlab.com/cip-project/cip-core/isar-cip-core)) as bootloader and
-supports A/B rootfs OTA updates via **SWUpdate**.
+RaTOS is an ISAR-based Debian Trixie image running a Xenomai 4 / EVL real-time kernel.
+It targets **amd64 / x86-64** hardware and uses **EFI Boot Guard** (from
+[isar-cip-core](https://gitlab.com/cip-project/cip-core/isar-cip-core)) as bootloader.
+A/B rootfs OTA updates are supported via **SWUpdate**.
 
 A developer container image is also produced (docker-archive) with all RaTOS libraries and
 the EVL toolchain pre-installed.
@@ -25,29 +25,32 @@ kas-container menu
 
 | Image type | kas command | Output |
 |---|---|---|
-| **Production** (A/B SWUpdate OTA) | `kas-container --isar build kas.yaml:kas/board/odroid-h4.yaml:kas/opt/swupdate.yaml` | `.wic` + `.swu` |
-| **Development** (single-root) | `kas-container --isar build kas.yaml:kas/board/odroid-h4.yaml` | `.wic` |
-| **Dev container** | `kas-container --isar build kas.yaml:kas/board/container-amd64.yaml` | `docker-archive.gz` |
+| **Target — production** (A/B SWUpdate OTA) | `kas-container --isar build kas.yaml:kas/board/<board>.yaml:kas/opt/swupdate.yaml` | `.wic` + `.swu` |
+| **Target — development** (single-root) | `kas-container --isar build kas.yaml:kas/board/<board>.yaml` | `.wic` |
+| **Dev container** (amd64 host) | `kas-container --isar build kas.yaml:kas/board/container-amd64.yaml` | `docker-archive.gz` |
+
+Replace `<board>` with the board overlay from `kas/board/` that matches your hardware.
+The current in-tree board is `odroid-h4` (Intel Alder Lake-N N97, amd64, standard UEFI).
 
 ## Output Files
 
 | Target | Path |
 |---|---|
-| Odroid H4 `.wic` | `build/tmp/deploy/images/odroid-h4/ratos-image*-odroid-h4.wic` |
-| Odroid H4 `.swu` | `build/tmp/deploy/images/odroid-h4/ratos-image-swupdate*-odroid-h4.swu` |
+| Board `.wic` | `build/tmp/deploy/images/<board>/ratos-image*-<board>.wic` |
+| Board `.swu` | `build/tmp/deploy/images/<board>/ratos-image-swupdate*-<board>.swu` |
 | Dev container | `build/tmp/deploy/images/container-amd64/ratos-dev-image*-container-amd64.docker-archive.gz` |
 
 ## Flash to USB / SD Card
 
 ```bash
-dd if=build/tmp/deploy/images/odroid-h4/ratos-image-ratos-odroid-h4.wic \
+dd if=build/tmp/deploy/images/<board>/ratos-image-ratos-<board>.wic \
    of=/dev/sdX bs=4M status=progress
 ```
 
 Or with bmap-tools (faster, only writes used blocks):
 
 ```bash
-bmaptool copy build/tmp/deploy/images/odroid-h4/ratos-image-ratos-odroid-h4.wic /dev/sdX
+bmaptool copy build/tmp/deploy/images/<board>/ratos-image-ratos-<board>.wic /dev/sdX
 ```
 
 ## OTA Update
@@ -74,8 +77,8 @@ podman run -it --rm -v $PWD:/workspace ratos-dev-image:latest
 ```
 kas.yaml                       # top-level kas config (distro, repos)
 Kconfig                        # interactive build menu
-kas/board/                     # per-target kas overlays
-kas/opt/                       # optional feature overlays (swupdate, …)
+kas/board/                     # per-board kas overlays (one file per board)
+kas/opt/                       # optional feature overlays (swupdate, ...)
 conf/machine/                  # machine configs (DISTRO_ARCH, EBG, WKS_FILE)
 conf/distro/                   # distro config (extends xenomai-demo)
 recipes-core/images/           # image recipes
@@ -86,9 +89,7 @@ recipes-rack/                  # RACK middleware
 recipes-sertial/               # SeRTial serialization library
 recipes-reflect-cpp/           # reflect-cpp (SeRTial dependency)
 recipes-commrat/               # CommRaT application
-wic/                           # disk layouts
-  odroid-h4.wks                # single-root (EFI Boot Guard, single slot)
-  odroid-h4-efibootguard.wks.in # A/B SWUpdate (templated, two slots)
+wic/                           # disk layouts (one set per board)
 ```
 
 ## Key Dependencies (submodules / kas-pinned repos)
@@ -98,6 +99,61 @@ wic/                           # disk layouts
 | [isar](https://github.com/ilbers/isar) | ISAR build system |
 | [xenomai-images](https://gitlab.com/Xenomai/xenomai-images) | Xenomai 4/EVL kernel + libevl recipes |
 | [isar-cip-core](https://gitlab.com/cip-project/cip-core/isar-cip-core) | EFI Boot Guard, SWUpdate, A/B wic plugins |
+
+## CI / CD
+
+The repository ships a GitHub Actions workflow at
+[.github/workflows/build-and-publish.yml](.github/workflows/build-and-publish.yml)
+that runs on every push to `main`, on version tags (`v*`), and on manual trigger
+(`workflow_dispatch`).
+
+### What the pipeline does
+
+| Step | Details |
+|---|---|
+| **Build** | Runs `kas-container --isar build kas.yaml:kas/board/container-amd64.yaml` on an `ubuntu-latest` runner (privileged Docker is available on GitHub-hosted VMs). Timeout: 120 min. |
+| **GHCR push** | Loads the `.docker-archive.gz` and pushes `ghcr.io/<owner>/ratos-dev-image:latest` and `ghcr.io/<owner>/ratos-dev-image:<git-sha>`. |
+| **GitHub Release** | On version tags only — creates a release and attaches the three artifacts below. |
+| **Workflow artifact** | On non-tag events — uploads the three artifacts as `ratos-evl-artifacts` (7-day retention) for downstream CI to consume via `dawidd6/action-download-artifact`. |
+
+### Published artifacts
+
+| File | Description |
+|---|---|
+| `vmlinuz` | EVL kernel image |
+| `initrd.img` | initrd for QEMU boot |
+| `ratos-dev-image.docker-archive.gz` | Docker rootfs archive |
+
+### Triggering a release
+
+Tag a commit with a `v`-prefixed version; the pipeline creates the GitHub
+Release and attaches all three artifacts automatically:
+
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+### Using the Docker image from GHCR
+
+```bash
+docker pull ghcr.io/<owner>/ratos-dev-image:latest
+docker run -it --rm -v $PWD:/workspace ghcr.io/<owner>/ratos-dev-image:latest
+```
+
+### Consuming artifacts from a non-release build
+
+Downstream CI can download `ratos-evl-artifacts` from the last `main` build
+using [dawidd6/action-download-artifact](https://github.com/dawidd6/action-download-artifact):
+
+```yaml
+- uses: dawidd6/action-download-artifact@v6
+  with:
+    repo: <owner>/RaTOS
+    workflow: build-and-publish.yml
+    branch: main
+    name: ratos-evl-artifacts
+```
 
 ## License
 

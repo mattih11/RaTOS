@@ -19,6 +19,13 @@ HOSTNAME = "ratos-dev"
 # Entire RaTOS stack built by local recipes
 DEPENDS = "rack reflect-cpp sertial commrat"
 
+# Ensure the EVL kernel and libevl are built and deployed to isar-apt before
+# do_rootfs_install runs. image.bbclass adds linux-image-xenomai-4 (package name)
+# to DEPENDS via IMAGE_INSTALL, but bitbake can't resolve that to a recipe because
+# the recipe PN is linux-xenomai-4 and PROVIDES uses the :arch suffix form. Spelling
+# out the recipe PNs here ensures the deptask fires on a cold cache (e.g. CI).
+DEPENDS += "linux-xenomai-4 libevl"
+
 # Dev toolchain from Debian Trixie
 IMAGE_PREINSTALL += " \
     build-essential cmake ninja-build pkg-config \
