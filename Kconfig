@@ -16,7 +16,17 @@ config TARGET_ODROID_H4
         bool "Odroid H4 (Intel Alder Lake-N, amd64 EFI)"
 
 config TARGET_CONTAINER_AMD64
-        bool "Developer container image (amd64 docker-archive)"
+        bool "Developer container image (amd64 docker-archive + QEMU wic)"
+        help
+          Builds ratos-dev-image for the container-amd64 machine.
+          Produces:
+            - docker-archive.gz  (Docker rootfs, load with podman/docker)
+            - vmlinuz / initrd.img  (EVL kernel + initrd, separate files)
+            - wic / wic.gz  (QEMU-bootable raw disk image, single ext4
+              partition, no bootloader; boot with:
+              qemu-system-x86_64 -kernel vmlinuz -initrd initrd.img
+                -hda *.wic -append "root=LABEL=root rw console=ttyS0")
+          Uses ISAR's canned qemudefault wks layout.
 
 endchoice
 

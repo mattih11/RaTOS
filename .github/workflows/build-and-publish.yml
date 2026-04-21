@@ -1,15 +1,17 @@
 #
 # RaTOS Real-Time OS - Build and Publish
 #
-# Builds the RaTOS developer container image (EVL/Xenomai 4) and publishes:
-#   - Docker image to GHCR (all triggers)
+# Builds all configured machines in a matrix, then publishes:
+#   - Docker image to GHCR (container-amd64 only)
 #   - GitHub Release assets on version tags (v*)
-#   - Workflow artifacts on non-tag pushes (for downstream CI consumption)
+#   - Workflow artifact named ratos-evl-artifacts on non-tag pushes
 #
 # Artifact contract (do not rename without updating consumers):
-#   vmlinuz                        - EVL kernel image
-#   initrd.img                     - initrd for QEMU boot
-#   ratos-dev-image.docker-archive.gz - Docker rootfs archive
+#   vmlinuz                                  EVL kernel image
+#   initrd.img                               initrd for QEMU boot
+#   ratos-dev-image.docker-archive.gz        Docker rootfs archive
+#   ratos-dev-image-container-amd64.wic.gz   QEMU-bootable raw disk (gzip)
+#   ratos-image-odroid-h4.wic.gz             Odroid H4 flash image (gzip)
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
@@ -27,31 +29,114 @@ permissions:
   packages: write   # push to GHCR
 
 jobs:
-  build-and-publish:
+  # ---------------------------------------------------------------------------
+  # Build matrix — one job per machine, run in parallel.
+  # Each job uploads its artifacts to the GitHub Actions artifact store so the
+  # publish job can pick them up regardless of which builds succeeded.
+  # ---------------------------------------------------------------------------
+  build:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 180
+    continue-on-error: ${{ matrix.continue-on-error || false }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - machine: container-amd64
+            kas_config: kas.yaml:kas/board/container-amd64.yaml
+            # Produces: docker-archive.gz, vmlinuz, initrd.img, wic.gz
+
+          - machine: odroid-h4
+            kas_config: kas.yaml:kas/board/odroid-h4.yaml
+            # Produces: wic.gz
+            # Not yet validated on GitHub-hosted runners (kernel compilation
+            # may exceed the runner wall-clock limit on a cold cache).
+            continue-on-error: true
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # kas-container is the shell wrapper that runs the kas-isar Docker image.
-      # pip install kas provides both the `kas` Python tool and `kas-container`.
+      # kas-container is the shell wrapper shipped by the kas pip package.
+      # It spawns ghcr.io/siemens/kas/kas-isar:5.1 with --privileged, which
+      # is supported on GitHub-hosted runners (VM, not container).
       - name: Install kas
         run: pip install kas==5.1
 
-      # kas-container --isar spawns ghcr.io/siemens/kas/kas-isar:5.1 with
-      # --privileged to support ISAR's chroot-based build system.
-      - name: Build RaTOS developer image
-        run: kas-container --isar build kas.yaml:kas/board/container-amd64.yaml
+      - name: Build ${{ matrix.machine }}
+        run: kas-container --isar build ${{ matrix.kas_config }}
 
-      # Copy build outputs to canonical names required by the integration contract.
-      - name: Stage artifacts with canonical names
+      # Rename artifacts to drop the ISAR distro infix (-ratos-) so consumer
+      # names are stable and do not embed internal build system details.
+      #
+      # ISAR output pattern: <image>-ratos-<machine>.<ext>
+      # Published name:      <image>-<machine>.<ext>   (drop "-ratos")
+      - name: Stage artifacts
         run: |
-          DEPLOY="build/tmp/deploy/images/container-amd64"
-          cp "${DEPLOY}/ratos-dev-image-ratos-container-amd64-vmlinuz"    vmlinuz
-          cp "${DEPLOY}/ratos-dev-image-ratos-container-amd64-initrd.img" initrd.img
-          cp "${DEPLOY}/ratos-dev-image-ratos-amd64.docker-archive.gz"    ratos-dev-image.docker-archive.gz
+          DEPLOY="build/tmp/deploy/images/${{ matrix.machine }}"
+
+          # Compressed wic image — present for all machines.
+          for f in "${DEPLOY}"/*.wic.gz; do
+            [ -f "$f" ] || continue
+            name=$(basename "$f")
+            # ratos-dev-image-ratos-container-amd64.wic.gz
+            #   -> ratos-dev-image-container-amd64.wic.gz
+            clean=$(echo "$name" | sed 's/-ratos-\(.*\)\.wic\.gz$/-\1.wic.gz/')
+            cp "$f" "$clean"
+          done
+
+          # container-amd64 extras (Docker archive, kernel, initrd).
+          if [[ "${{ matrix.machine }}" == "container-amd64" ]]; then
+            cp "${DEPLOY}/ratos-dev-image-ratos-container-amd64-vmlinuz"    vmlinuz
+            cp "${DEPLOY}/ratos-dev-image-ratos-container-amd64-initrd.img" initrd.img
+            cp "${DEPLOY}/ratos-dev-image-ratos-amd64.docker-archive.gz"    ratos-dev-image.docker-archive.gz
+          fi
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifacts-${{ matrix.machine }}
+          path: |
+            vmlinuz
+            initrd.img
+            ratos-dev-image.docker-archive.gz
+            *.wic.gz
+          if-no-files-found: ignore
+          retention-days: 7
+
+  # ---------------------------------------------------------------------------
+  # Publish — runs after all build jobs finish (even if some failed).
+  # Downloads per-machine artifact bundles, pushes Docker, creates releases.
+  # ---------------------------------------------------------------------------
+  publish:
+    needs: build
+    if: always()
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download container-amd64 artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: artifacts-container-amd64
+          path: artifacts/container-amd64
+
+      - name: Download odroid-h4 artifacts
+        uses: actions/download-artifact@v4
+        # May not exist if the odroid-h4 build failed or timed out.
+        continue-on-error: true
+        with:
+          name: artifacts-odroid-h4
+          path: artifacts/odroid-h4
+
+      # Collect every file across all per-machine artifact directories into a
+      # flat release/ directory. File names are unique across machines.
+      - name: Collect release files
+        run: |
+          mkdir -p release
+          find artifacts -type f -exec cp {} release/ \;
+          echo "Release contents:"
+          ls -lh release/
 
       - name: Log in to GHCR
         uses: docker/login-action@v3
@@ -62,13 +147,19 @@ jobs:
 
       - name: Push Docker image to GHCR
         run: |
+          DOCKER_ARCHIVE="artifacts/container-amd64/ratos-dev-image.docker-archive.gz"
+          if [ ! -f "${DOCKER_ARCHIVE}" ]; then
+            echo "Docker archive not found (container-amd64 build did not succeed), skipping."
+            exit 0
+          fi
+
           IMAGE_REPO="ghcr.io/${{ github.repository_owner }}/ratos-dev-image"
           GIT_SHA="${{ github.sha }}"
 
           # docker load prints either:
           #   "Loaded image: <name>:<tag>"   (archive has a tag)
           #   "Loaded image ID: sha256:..."  (archive has no tag)
-          LOADED=$(docker load < ratos-dev-image.docker-archive.gz \
+          LOADED=$(docker load < "${DOCKER_ARCHIVE}" \
             | grep "Loaded image" | tail -1 | sed 's/.*: //')
 
           docker tag "${LOADED}" "${IMAGE_REPO}:latest"
@@ -76,25 +167,22 @@ jobs:
           docker push "${IMAGE_REPO}:latest"
           docker push "${IMAGE_REPO}:${GIT_SHA}"
 
-      # On version tags: create a GitHub Release and attach the three artifacts.
+      # On version tags: create a GitHub Release and attach all built artifacts.
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          files: |
-            vmlinuz
-            initrd.img
-            ratos-dev-image.docker-archive.gz
+          files: release/*
 
-      # On non-tag events: upload as a workflow artifact so downstream CI
-      # (e.g. CommRaT) can fetch via dawidd6/action-download-artifact.
+      # On non-tag pushes: upload as a workflow artifact for downstream CI
+      # (CommRaT) to consume via dawidd6/action-download-artifact.
+      # Only the container-amd64 artifacts are included since those are the
+      # files downstream CI needs (vmlinuz, initrd.img, docker archive, wic).
       - name: Upload workflow artifacts
         if: "!startsWith(github.ref, 'refs/tags/')"
         uses: actions/upload-artifact@v4
         with:
           name: ratos-evl-artifacts
-          path: |
-            vmlinuz
-            initrd.img
-            ratos-dev-image.docker-archive.gz
+          path: artifacts/container-amd64/
+          if-no-files-found: ignore
           retention-days: 7

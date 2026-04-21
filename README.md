@@ -25,9 +25,9 @@ kas-container menu
 
 | Image type | kas command | Output |
 |---|---|---|
-| **Target — production** (A/B SWUpdate OTA) | `kas-container --isar build kas.yaml:kas/board/<board>.yaml:kas/opt/swupdate.yaml` | `.wic` + `.swu` |
-| **Target — development** (single-root) | `kas-container --isar build kas.yaml:kas/board/<board>.yaml` | `.wic` |
-| **Dev container** (amd64 host) | `kas-container --isar build kas.yaml:kas/board/container-amd64.yaml` | `docker-archive.gz` |
+| **Target — production** (A/B SWUpdate OTA) | `kas-container --isar build kas.yaml:kas/board/<board>.yaml:kas/opt/swupdate.yaml` | `.wic` + `.wic.gz` + `.swu` |
+| **Target — development** (single-root) | `kas-container --isar build kas.yaml:kas/board/<board>.yaml` | `.wic` + `.wic.gz` |
+| **Dev container** (amd64 host) | `kas-container --isar build kas.yaml:kas/board/container-amd64.yaml` | `docker-archive.gz` + `wic.gz` + `vmlinuz` + `initrd.img` |
 
 Replace `<board>` with the board overlay from `kas/board/` that matches your hardware.
 The current in-tree board is `odroid-h4` (Intel Alder Lake-N N97, amd64, standard UEFI).
@@ -37,10 +37,30 @@ The current in-tree board is `odroid-h4` (Intel Alder Lake-N N97, amd64, standar
 | Target | Path |
 |---|---|
 | Board `.wic` | `build/tmp/deploy/images/<board>/ratos-image*-<board>.wic` |
+| Board `.wic.gz` | `build/tmp/deploy/images/<board>/ratos-image*-<board>.wic.gz` |
 | Board `.swu` | `build/tmp/deploy/images/<board>/ratos-image-swupdate*-<board>.swu` |
-| Dev container | `build/tmp/deploy/images/container-amd64/ratos-dev-image*-container-amd64.docker-archive.gz` |
+| Dev container docker | `build/tmp/deploy/images/container-amd64/ratos-dev-image*-amd64.docker-archive.gz` |
+| Dev container wic | `build/tmp/deploy/images/container-amd64/ratos-dev-image*-container-amd64.wic.gz` |
+| Dev kernel | `build/tmp/deploy/images/container-amd64/ratos-dev-image*-container-amd64-vmlinuz` |
+| Dev initrd | `build/tmp/deploy/images/container-amd64/ratos-dev-image*-container-amd64-initrd.img` |
 
-## Flash to USB / SD Card
+## Boot the Developer Image in QEMU
+
+The dev container build also produces a QEMU-bootable raw disk image (`wic.gz`).
+Boot it directly using the separate kernel and initrd artifacts:
+
+```bash
+DEPLOY=build/tmp/deploy/images/container-amd64
+qemu-system-x86_64 \
+  -m 2G -smp 4 -nographic \
+  -kernel  ${DEPLOY}/ratos-dev-image-ratos-container-amd64-vmlinuz \
+  -initrd  ${DEPLOY}/ratos-dev-image-ratos-container-amd64-initrd.img \
+  -drive   file=${DEPLOY}/ratos-dev-image-ratos-container-amd64.wic,format=raw \
+  -append  "root=LABEL=root rw console=ttyS0,115200 console=tty0"
+```
+
+Or use the downloaded CI artifacts (the wic.gz is automatically decompressed by QEMU's
+`-drive` when given as a `.gz`, or decompress manually first with `gunzip`).
 
 ```bash
 dd if=build/tmp/deploy/images/<board>/ratos-image-ratos-<board>.wic \
@@ -111,23 +131,32 @@ that runs on every push to `main`, on version tags (`v*`), and on manual trigger
 
 | Step | Details |
 |---|---|
-| **Build** | Runs `kas-container --isar build kas.yaml:kas/board/container-amd64.yaml` on an `ubuntu-latest` runner (privileged Docker is available on GitHub-hosted VMs). Timeout: 120 min. |
+| **Build (matrix)** | Runs one job per machine in parallel. `container-amd64` builds `ratos-dev-image`; `odroid-h4` builds `ratos-image` (marked `continue-on-error` until validated on CI runners). Timeout: 180 min per job. |
 | **GHCR push** | Loads the `.docker-archive.gz` and pushes `ghcr.io/<owner>/ratos-dev-image:latest` and `ghcr.io/<owner>/ratos-dev-image:<git-sha>`. |
-| **GitHub Release** | On version tags only — creates a release and attaches the three artifacts below. |
-| **Workflow artifact** | On non-tag events — uploads the three artifacts as `ratos-evl-artifacts` (7-day retention) for downstream CI to consume via `dawidd6/action-download-artifact`. |
+| **GitHub Release** | On version tags only — creates a release and attaches all artifacts from all successful matrix jobs. |
+| **Workflow artifact** | On non-tag events — uploads container-amd64 artifacts as `ratos-evl-artifacts` (7-day retention) for downstream CI. |
 
 ### Published artifacts
+
+**container-amd64** (always present on successful build):
 
 | File | Description |
 |---|---|
 | `vmlinuz` | EVL kernel image |
 | `initrd.img` | initrd for QEMU boot |
 | `ratos-dev-image.docker-archive.gz` | Docker rootfs archive |
+| `ratos-dev-image-container-amd64.wic.gz` | QEMU / raw-disk image (compressed) |
+
+**odroid-h4** (`continue-on-error` — attached if the build succeeds):
+
+| File | Description |
+|---|---|
+| `ratos-image-odroid-h4.wic.gz` | Full A/B EFI disk image (compressed) |
 
 ### Triggering a release
 
 Tag a commit with a `v`-prefixed version; the pipeline creates the GitHub
-Release and attaches all three artifacts automatically:
+Release and attaches all available matrix artifacts automatically:
 
 ```bash
 git tag v1.0.0
@@ -143,8 +172,8 @@ docker run -it --rm -v $PWD:/workspace ghcr.io/<owner>/ratos-dev-image:latest
 
 ### Consuming artifacts from a non-release build
 
-Downstream CI can download `ratos-evl-artifacts` from the last `main` build
-using [dawidd6/action-download-artifact](https://github.com/dawidd6/action-download-artifact):
+Downstream CI can download `ratos-evl-artifacts` (container-amd64 outputs only)
+from the last `main` build using [dawidd6/action-download-artifact](https://github.com/dawidd6/action-download-artifact):
 
 ```yaml
 - uses: dawidd6/action-download-artifact@v6
