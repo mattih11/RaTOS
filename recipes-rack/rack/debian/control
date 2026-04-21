@@ -1,0 +1,29 @@
+Source: rack
+Section: libs
+Priority: optional
+Maintainer: Matthias Haase <mattihaase@proton.me>
+Build-Depends: debhelper-compat (= 13),
+               cmake (>= 3.16),
+               g++,
+               libc6-dev
+Standards-Version: 4.6.0
+
+Package: rack
+Architecture: any
+Depends: ${misc:Depends}, ${shlibs:Depends}
+Description: RACK - Robotics Application Construction Kit
+ Provides the TiMS (Tube IPC Message Service) real-time IPC backend used
+ by CommRaT for inter-module message passing on Xenomai/EVL systems.
+
+Package: rack-dev
+Architecture: any
+Depends: ${misc:Depends}, rack
+Description: RACK - development headers and static libraries
+ Header files and link libraries for building applications against the
+ RACK TiMS IPC system.
+
+Package: rack-tools
+Architecture: any
+Depends: ${misc:Depends}, ${shlibs:Depends}, rack
+Description: RACK - tools and example modules
+ Additional utility binaries and scripts for the RACK framework.

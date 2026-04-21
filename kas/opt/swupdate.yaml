@@ -1,0 +1,39 @@
+#
+# RaTOS Real-Time OS — SWUpdate + A/B partition support
+#
+# Enables EFI Boot Guard A/B rootfs updates via SWUpdate.
+# Produces both a .wic image (initial flash) and a .swu artifact (OTA update).
+#
+# Usage:
+#   kas-container --isar build kas.yaml:kas/board/odroid-h4.yaml:kas/opt/swupdate.yaml
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+header:
+  version: 14
+
+# Override default target with the SWUpdate-capable image recipe
+target: ratos-image-swupdate
+
+local_conf_header:
+  swupdate-bootloader: |
+    SWUPDATE_BOOTLOADER = "efibootguard"
+    # Activate :swupdate OVERRIDE so swupdate.inc conditionals fire
+    OVERRIDES .= ":swupdate"
+
+  swupdate-wic: |
+    WKS_FILE = "odroid-h4-efibootguard.wks.in"
+    # Partition UUIDs for A/B rootfs (override for production with unique values)
+    ABROOTFS_PART_UUID_A ?= "fedcba98-7654-3210-cafe-5e0710000001"
+    ABROOTFS_PART_UUID_B ?= "fedcba98-7654-3210-cafe-5e0710000002"
+    # Wipe first 5 MiB of rootfs-B so LUKS/squashfs headers from a previous
+    # installation do not confuse bmaptool or swupdate on the inactive slot.
+    ABROOTFS_SOURCEPARAMS_B = "size=5M"
+
+  swupdate-security: |
+    # Use snake-oil keys for development; replace for production
+    PREFERRED_PROVIDER_swupdate-certificates-key ??= "swupdate-certificates-key-snakeoil"
+    PREFERRED_PROVIDER_swupdate-certificates ??= "swupdate-certificates-snakeoil"
+    PREFERRED_PROVIDER_swupdate-signer ??= "swupdate-signer-cms"
+    SWU_HW_COMPAT = "ratos-1.0"

@@ -1,0 +1,20 @@
+Source: commrat
+Section: libs
+Priority: optional
+Maintainer: Matthias Haase <mattihaase@proton.me>
+Build-Depends: debhelper-compat (= 13),
+               cmake (>= 3.20),
+               g++ (>= 10),
+               libsertial-dev,
+               libreflect-cpp-dev,
+               rack-dev
+Standards-Version: 4.6.0
+
+Package: libcommrat-dev
+Architecture: any
+Depends: ${misc:Depends}, ${shlibs:Depends},
+         libsertial-dev, libreflect-cpp-dev, rack
+Description: CommRaT - C++20 real-time communication framework (dev headers)
+ Combines RACK's TiMS IPC message service with SeRTial's zero-allocation
+ serialization. Provides compile-time type-safe messaging, module framework,
+ and real-time capable publish/subscribe patterns.

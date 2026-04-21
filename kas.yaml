@@ -1,0 +1,60 @@
+#
+# RaTOS Real-Time OS
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+header:
+  version: 14
+
+build_system: isar
+
+distro: ratos
+target: ratos-image
+
+repos:
+  ratos:
+    # current repo - the RaTOS ISAR layer
+    layers:
+      .:
+
+  xenomai-images:
+    url: https://gitlab.com/Xenomai/xenomai-images.git
+    commit: aab288d127a4658f7c4da69b811f8a501261afbd
+    layers:
+      .:
+
+  isar:
+    url: https://github.com/ilbers/isar.git
+    commit: 9792d18e9334b3cec72e2ade6a1065084c0c24d6
+    layers:
+      meta:
+
+  isar-cip-core:
+    url: https://gitlab.com/cip-project/cip-core/isar-cip-core.git
+    commit: 185b390af944e095d803c82d434bd51e74c999fd
+    layers:
+      .:
+
+bblayers_conf_header:
+  standard: |
+    LCONF_VERSION = "6"
+    BBPATH = "${TOPDIR}"
+    BBFILES ?= ""
+
+local_conf_header:
+  standard: |
+    CONF_VERSION = "1"
+  cross: |
+    ISAR_CROSS_COMPILE = "1"
+  ccache: |
+    USE_CCACHE = "1"
+  # Xenomai 4 / EVL
+  xenomai-4: |
+    XENOMAI_MAJOR_VERSION ?= "4"
+  # CIP LTS kernel 6.12
+  linux-xenomai-version: |
+    PREFERRED_VERSION_linux-xenomai-4 = "6.12%"
+
+env:
+  DISTRO_APT_PREMIRRORS: ""

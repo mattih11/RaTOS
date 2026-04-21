@@ -1,0 +1,24 @@
+#
+# RaTOS Real-Time OS
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+# Odroid H4 — A/B disk layout for SWUpdate OTA
+# EFI Boot Guard dual-slot: rootfsA (active) + rootfsB (inactive, updated by swupdate).
+#
+# Build with:
+#   kas-container --isar build kas.yaml:kas/board/odroid-h4.yaml:kas/opt/swupdate.yaml
+#
+
+include ebg-sysparts.inc
+
+# Root filesystem A — populated at build time from the read-only rootfs image
+part --source rawcopy --sourceparams "file=${IMAGE_FULLNAME}.${RO_ROOTFS_TYPE}" --align 1024 --fixed-size 2G --uuid "${ABROOTFS_PART_UUID_A}" --part-type 0FC63DAF-8483-4772-8E79-3D69D8477DE4 --part-name systema
+
+# Root filesystem B — initially empty; SWUpdate writes here on first OTA
+part --source empty --sourceparams "${ABROOTFS_SOURCEPARAMS_B}" --align 1024 --fixed-size 2G --uuid "${ABROOTFS_PART_UUID_B}" --part-type 0FC63DAF-8483-4772-8E79-3D69D8477DE4 --part-name systemb
+
+# Persistent /var (survives rootfs updates; provided by WIC_VAR_PARTITION if set)
+${WIC_VAR_PARTITION}
+
+bootloader --ptable gpt --append "rw rootwait console=ttyS0,115200 console=tty0"

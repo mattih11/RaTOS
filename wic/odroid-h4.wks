@@ -1,0 +1,20 @@
+#
+# RaTOS Real-Time OS
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+# Odroid H4 — single-root disk layout (development / first-boot)
+# Uses EFI Boot Guard (single slot, no A/B).
+# For production OTA builds use: kas/opt/swupdate.yaml → odroid-h4-efibootguard.wks.in
+#
+
+# EBG binary lives in the EFI system partition
+part --source efibootguard-efi --fixed-size 16M --label efi --align 1024 --part-type=EF00 --active --fsuuid 0x4321dcba --uuid c19e7e9f-bacf-49a6-b43d-2fc18d2a8d03
+
+# EBG config + kernel/initrd (single slot, revision=1)
+part --source efibootguard-boot --fixed-size 128M --label BOOT --align 1024 --part-type=0700 --sourceparams "revision=1"
+
+# Root filesystem (ext4, partition-expand-on-first-boot enabled)
+part / --source rootfs --ondisk sda --fstype ext4 --label platform --align 1024 --use-uuid
+
+bootloader --ptable gpt --timeout=2 --append "rw rootwait console=ttyS0,115200 console=tty0"

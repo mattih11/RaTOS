@@ -1,0 +1,17 @@
+#
+# RaTOS Real-Time OS
+#
+# Build a RaTOS developer container image (docker-archive.gz) using
+# the ISAR container-amd64 machine.
+#
+# Usage:
+#   kas-container --isar build kas.yaml:kas/board/container-amd64.yaml
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+header:
+  version: 14
+
+machine: container-amd64
+target: ratos-dev-image

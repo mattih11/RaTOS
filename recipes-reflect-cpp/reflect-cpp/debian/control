@@ -1,0 +1,14 @@
+Source: reflect-cpp
+Section: libdevel
+Priority: optional
+Maintainer: Matthias Haase <mattihaase@proton.me>
+Build-Depends: debhelper-compat (= 13),
+               cmake (>= 3.20)
+Standards-Version: 4.6.0
+
+Package: libreflect-cpp-dev
+Architecture: all
+Depends: ${misc:Depends}
+Description: reflect-cpp - compile-time C++20 reflection library (headers)
+ A header-only C++20 library providing compile-time struct reflection,
+ used by SeRTial for zero-boilerplate serialization schema generation.

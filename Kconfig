@@ -1,0 +1,53 @@
+mainmenu "RaTOS Real-Time OS"
+
+config KAS_INCLUDE_MAIN
+        string
+        default "kas.yaml"
+
+config KAS_BUILD_SYSTEM
+        string
+        default "isar"
+
+choice
+        prompt "Target"
+        default TARGET_ODROID_H4
+
+config TARGET_ODROID_H4
+        bool "Odroid H4 (Intel Alder Lake-N, amd64 EFI)"
+
+config TARGET_CONTAINER_AMD64
+        bool "Developer container image (amd64 docker-archive)"
+
+endchoice
+
+config KAS_INCLUDE_TARGET
+        string
+        default "kas/board/odroid-h4.yaml"       if TARGET_ODROID_H4
+        default "kas/board/container-amd64.yaml"  if TARGET_CONTAINER_AMD64
+
+if TARGET_ODROID_H4
+
+choice
+        prompt "Image type"
+        default IMAGE_SWUPDATE
+
+config IMAGE_SWUPDATE
+        bool "Production image with SWUpdate OTA (A/B rootfs, EFI Boot Guard)"
+        help
+          Produces a .wic for initial flashing and a .swu for OTA updates.
+          Uses EFI Boot Guard for A/B slot switching with watchdog rollback.
+          Recommended for real deployments.
+
+config IMAGE_SINGLE_ROOT
+        bool "Development image (single-root, no OTA)"
+        help
+          Single-slot ext4 rootfs, EFI Boot Guard, expands partition on first boot.
+          Simpler for development but does not support OTA updates.
+
+endchoice
+
+config KAS_INCLUDE_IMAGE_TYPE
+        string
+        default "kas/opt/swupdate.yaml" if IMAGE_SWUPDATE
+
+endif   # TARGET_ODROID_H4

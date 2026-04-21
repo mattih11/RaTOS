@@ -1,0 +1,23 @@
+#!/usr/bin/make -f
+
+include /usr/share/dpkg/architecture.mk
+
+%:
+	dh $@ --buildsystem=cmake
+
+override_dh_auto_configure:
+	dh_auto_configure -- \
+	    -DRACK_BUILD_TESTS=OFF \
+            -DRACK_BUILD_EXAMPLES=OFF \
+            -DBuild_RACK_Java=OFF \
+            -DBuild_RACK_JavaGUI=OFF
+
+override_dh_auto_install:
+	# cmake installs headers via install(DIRECTORY PROJECT_SOURCE_DIR/) which
+	# traverses at runtime; since DESTDIR=debian/tmp is inside PROJECT_SOURCE_DIR,
+	# previously-installed headers create infinite recursive paths. Use a staging
+	# dir outside the source tree to avoid this.
+	cmake --install obj-$(DEB_HOST_MULTIARCH) --prefix /tmp/rack-staging/usr
+	mkdir -p $(CURDIR)/debian/tmp
+	cp -a /tmp/rack-staging/. $(CURDIR)/debian/tmp/
+	rm -rf /tmp/rack-staging
