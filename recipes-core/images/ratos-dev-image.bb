@@ -58,9 +58,9 @@ set_hostname() {
 # Permit root SSH login and password auth for the developer VM image.
 # This is intentional: the image is for local QEMU development only.
 configure_sshd() {
-    local cfg="${ROOTFSDIR}/etc/ssh/sshd_config.d/99-ratos-dev.conf"
-    sudo mkdir -p "$(dirname "$cfg")"
-    printf 'PermitRootLogin yes\nPasswordAuthentication yes\n' | sudo tee "$cfg" > /dev/null
+    sudo mkdir -p "${ROOTFSDIR}/etc/ssh/sshd_config.d"
+    printf 'PermitRootLogin yes\nPasswordAuthentication yes\n' | \
+        sudo tee "${ROOTFSDIR}/etc/ssh/sshd_config.d/99-ratos-dev.conf" > /dev/null
 }
 
 ROOTFS_POSTPROCESS_COMMAND =+ "set_hostname; configure_sshd"
