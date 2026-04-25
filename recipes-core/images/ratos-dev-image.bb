@@ -61,6 +61,8 @@ configure_sshd() {
     sudo mkdir -p "${ROOTFSDIR}/etc/ssh/sshd_config.d"
     printf 'PermitRootLogin yes\nPasswordAuthentication yes\n' | \
         sudo tee "${ROOTFSDIR}/etc/ssh/sshd_config.d/99-ratos-dev.conf" > /dev/null
+    # Set a default root password (dev image only — not for production use)
+    printf 'root:ratos\n' | sudo chroot "${ROOTFSDIR}" chpasswd
 }
 
 ROOTFS_POSTPROCESS_COMMAND =+ "set_hostname configure_sshd"
