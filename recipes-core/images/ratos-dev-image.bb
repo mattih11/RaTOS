@@ -25,6 +25,7 @@ DEPENDS = "rack reflect-cpp sertial commrat"
 # the recipe PN is linux-xenomai-4 and PROVIDES uses the :arch suffix form. Spelling
 # out the recipe PNs here ensures the deptask fires on a cold cache (e.g. CI).
 DEPENDS += "linux-xenomai-4 libevl"
+DEPENDS += "sshd-regen-keys"
 
 # Dev toolchain from Debian Trixie
 IMAGE_PREINSTALL += " \
@@ -33,6 +34,7 @@ IMAGE_PREINSTALL += " \
     git ca-certificates curl \
     python3 python3-pip \
     clang-format clang-tidy \
+    openssh-server \
     "
 
 # RaTOS and EVL development libraries (headers + link stubs)
@@ -43,6 +45,7 @@ IMAGE_INSTALL += " \
     libreflect-cpp-dev \
     libsertial-dev \
     libcommrat-dev \
+    sshd-regen-keys \
     "
 
 ROOTFS_FEATURES:remove = "generate-sbom"
@@ -51,4 +54,13 @@ ROOTFS_FEATURES:remove = "generate-sbom"
 set_hostname() {
     echo "${HOSTNAME}" | sudo tee "${ROOTFSDIR}/etc/hostname" > /dev/null
 }
-ROOTFS_POSTPROCESS_COMMAND =+ "set_hostname"
+
+# Permit root SSH login and password auth for the developer VM image.
+# This is intentional: the image is for local QEMU development only.
+configure_sshd() {
+    local cfg="${ROOTFSDIR}/etc/ssh/sshd_config.d/99-ratos-dev.conf"
+    sudo mkdir -p "$(dirname "$cfg")"
+    printf 'PermitRootLogin yes\nPasswordAuthentication yes\n' | sudo tee "$cfg" > /dev/null
+}
+
+ROOTFS_POSTPROCESS_COMMAND =+ "set_hostname; configure_sshd"
