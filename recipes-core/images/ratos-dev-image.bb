@@ -63,4 +63,4 @@ configure_sshd() {
         sudo tee "${ROOTFSDIR}/etc/ssh/sshd_config.d/99-ratos-dev.conf" > /dev/null
 }
 
-ROOTFS_POSTPROCESS_COMMAND =+ "set_hostname; configure_sshd"
+ROOTFS_POSTPROCESS_COMMAND =+ "set_hostname configure_sshd"
