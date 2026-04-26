@@ -56,8 +56,8 @@ exec qemu-system-x86_64 \
     -kernel "${KERNEL_FILE}" \
     -initrd "${INITRD_FILE}" \
     -drive file="${WIC_FILE}",discard=unmap,if=none,id=disk,format=raw \
-    -device ide-hd,drive=disk \
-    -append "root=LABEL=root rw console=ttyS0,115200 console=tty0" \
+    -device virtio-blk-pci,drive=disk \
+    -append "root=LABEL=root rw rootwait console=ttyS0,115200 console=tty0" \
     -serial mon:stdio \
     -netdev user,id=net,hostfwd=tcp:127.0.0.1:22222-:22 \
     -device virtio-net-pci,netdev=net \
