@@ -7,11 +7,13 @@
 #   - Workflow artifact named ratos-evl-artifacts on non-tag pushes
 #
 # Artifact contract (do not rename without updating consumers):
-#   vmlinuz                                  EVL kernel image
-#   initrd.img                               initrd for QEMU boot
-#   ratos-dev-image.docker-archive.gz        Docker rootfs archive
-#   ratos-dev-image-container-amd64.wic.gz   QEMU-bootable raw disk (gzip)
-#   ratos-image-odroid-h4.wic.gz             Odroid H4 flash image (gzip)
+#   vmlinuz                                      EVL kernel image
+#   initrd.img                                   initrd for QEMU boot
+#   ratos-dev-image.docker-archive.gz            Docker rootfs archive
+#   ratos-dev-image-container-amd64.ext4.gz      QEMU ext4 rootfs (gzip, no partition table)
+#   ratos-dev-image-container-amd64.wic.gz       QEMU-bootable wic disk image (gzip, with partition table)
+#   ratos-image-odroid-h4.wic.gz                 Odroid H4 flash image (gzip)
+#   ratos-dev-sdk-container-amd64.*              Cross-compilation SDK installer (version tags only)
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
@@ -67,6 +69,14 @@ jobs:
       - name: Build ${{ matrix.machine }}
         run: kas-container --isar build ${{ matrix.kas_config }}
 
+      # Build the cross-compilation SDK (tags only — reuses sstate from the
+      # main build above so only the SDK-specific packaging tasks run).
+      - name: Build SDK
+        if: startsWith(github.ref, 'refs/tags/v') && matrix.machine == 'container-amd64'
+        run: >-
+          kas-container --isar build ${{ matrix.kas_config }}
+          -- -c populate_sdk ratos-dev-image
+
       # Rename artifacts to drop the ISAR distro infix (-ratos-) so consumer
       # names are stable and do not embed internal build system details.
       #
@@ -86,11 +96,26 @@ jobs:
             cp "$f" "$clean"
           done
 
-          # container-amd64 extras (Docker archive, kernel, initrd).
+          # container-amd64 extras (Docker archive, kernel, initrd, ext4, SDK).
           if [[ "${{ matrix.machine }}" == "container-amd64" ]]; then
             cp "${DEPLOY}/ratos-dev-image-ratos-container-amd64-vmlinuz"    vmlinuz
             cp "${DEPLOY}/ratos-dev-image-ratos-container-amd64-initrd.img" initrd.img
             cp "${DEPLOY}/ratos-dev-image-ratos-amd64.docker-archive.gz"    ratos-dev-image.docker-archive.gz
+
+            # Compress the raw ext4 rootfs so start-qemu.sh users can
+            # download and gunzip it rather than building locally.
+            EXT4_SRC="${DEPLOY}/ratos-dev-image-ratos-container-amd64.ext4"
+            if [ -f "${EXT4_SRC}" ]; then
+              gzip -c "${EXT4_SRC}" > ratos-dev-image-container-amd64.ext4.gz
+            fi
+
+            # SDK installer — present only when the Build SDK step ran.
+            SDK_SRC=$(find build/tmp/deploy -name '*sdk*' \
+              \( -name '*.tar.xz' -o -name '*.sh' \) 2>/dev/null | head -1)
+            if [ -n "${SDK_SRC}" ]; then
+              SDK_EXT="${SDK_SRC##*.}"
+              cp "${SDK_SRC}" "ratos-dev-sdk-container-amd64.${SDK_EXT}"
+            fi
           fi
 
       - name: Upload build artifacts
@@ -101,7 +126,9 @@ jobs:
             vmlinuz
             initrd.img
             ratos-dev-image.docker-archive.gz
+            *.ext4.gz
             *.wic.gz
+            ratos-dev-sdk-container-amd64.*
           if-no-files-found: ignore
           retention-days: 7
 

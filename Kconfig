@@ -16,17 +16,16 @@ config TARGET_ODROID_H4
         bool "Odroid H4 (Intel Alder Lake-N, amd64 EFI)"
 
 config TARGET_CONTAINER_AMD64
-        bool "Developer container image (amd64 docker-archive + QEMU wic)"
+        bool "Developer container image (amd64 docker-archive + QEMU ext4)"
         help
           Builds ratos-dev-image for the container-amd64 machine.
           Produces:
             - docker-archive.gz  (Docker rootfs, load with podman/docker)
             - vmlinuz / initrd.img  (EVL kernel + initrd, separate files)
-            - wic / wic.gz  (QEMU-bootable raw disk image, single ext4
-              partition, no bootloader; boot with:
-              qemu-system-x86_64 -kernel vmlinuz -initrd initrd.img
-                -hda *.wic -append "root=LABEL=root rw console=ttyS0")
-          Uses ISAR's canned qemudefault wks layout.
+            - ext4  (raw ext4 rootfs, used by scripts/start-qemu.sh directly)
+            - wic.gz  (wic disk image with partition table, for CI releases)
+          Boot locally:
+            ./scripts/start-qemu.sh
 
 endchoice
 
@@ -61,3 +60,26 @@ config KAS_INCLUDE_IMAGE_TYPE
         default "kas/opt/swupdate.yaml" if IMAGE_SWUPDATE
 
 endif   # TARGET_ODROID_H4
+
+if TARGET_CONTAINER_AMD64
+
+config BUILD_SDK
+        bool "Build cross-compilation SDK"
+        help
+          After building the rootfs, builds a cross-compilation SDK that lets
+          you compile CommRaT (and other packages) on your host machine,
+          targeting the EVL sysroot.  The SDK includes:
+            - x86_64 → amd64 cross-toolchain (gcc, g++, binutils, sysroot)
+            - EVL kernel headers  (linux-headers-xenomai-4)
+            - libevl headers and static/shared libraries
+
+          Build the SDK:
+            kas-container --isar build \
+              kas.yaml:kas/board/container-amd64.yaml \
+              -- -c populate_sdk ratos-dev-image
+
+          The SDK installer is written to build/tmp/deploy/sdk/ (or
+          build/tmp/deploy/images/container-amd64/).
+          See docs/commrat-dev-guide.md for the full cross-compile workflow.
+
+endif   # TARGET_CONTAINER_AMD64
