@@ -65,4 +65,14 @@ configure_sshd() {
     printf 'root:ratos\n' | sudo chroot "${ROOTFSDIR}" chpasswd
 }
 
-ROOTFS_POSTPROCESS_COMMAND =+ "set_hostname configure_sshd"
+# Ensure virtio-blk and virtio-pci are included in the initramfs so the QEMU
+# wic image can be booted with -device virtio-blk-pci. initramfs-tools reads
+# /etc/initramfs-tools/modules and includes the listed modules.
+configure_initramfs() {
+    sudo mkdir -p "${ROOTFSDIR}/etc/initramfs-tools"
+    printf 'virtio_blk\nvirtio_pci\n' | \
+        sudo tee "${ROOTFSDIR}/etc/initramfs-tools/modules" > /dev/null
+    sudo chroot "${ROOTFSDIR}" update-initramfs -u -k all
+}
+
+ROOTFS_POSTPROCESS_COMMAND =+ "set_hostname configure_sshd configure_initramfs"
