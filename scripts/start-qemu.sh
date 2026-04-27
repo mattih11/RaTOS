@@ -2,14 +2,14 @@
 #
 # RaTOS Real-Time OS — start the developer image in QEMU
 #
-# Boots the ratos-dev-image-container-amd64 wic image using the kernel and
+# Boots the ratos-dev-image-container-amd64 ext4 image using the kernel and
 # initrd from the ISAR deploy directory. A serial console is attached to
 # stdio so the VM shell appears directly in the calling terminal.
 #
 # Usage: ./scripts/start-qemu.sh [extra QEMU options]
 #
 # SSH is forwarded on localhost:22222 → VM:22 for convenience:
-#   ssh root@localhost -p 22222
+#   ssh root@localhost -p 22222   (password: root)
 #
 # KVM is used when available; falls back to TCG emulation automatically.
 #
@@ -22,13 +22,13 @@ BASE_DIR=$(readlink -f "${SCRIPT_DIR}/..")
 DEPLOY="${BASE_DIR}/build/tmp/deploy/images/container-amd64"
 
 # Resolve image files — pick the most recently modified if multiple match.
-WIC_FILE=$(ls -t "${DEPLOY}"/ratos-dev-image*container-amd64.wic 2>/dev/null | head -1)
+EXT4_FILE=$(ls -t "${DEPLOY}"/ratos-dev-image*container-amd64.ext4 2>/dev/null | head -1)
 KERNEL_FILE=$(ls -t "${DEPLOY}"/ratos-dev-image*container-amd64*vmlinuz 2>/dev/null | head -1)
 INITRD_FILE=$(ls -t "${DEPLOY}"/ratos-dev-image*container-amd64*initrd.img 2>/dev/null | head -1)
 
-if [ -z "${WIC_FILE}" ] || [ -z "${KERNEL_FILE}" ] || [ -z "${INITRD_FILE}" ]; then
+if [ -z "${EXT4_FILE}" ] || [ -z "${KERNEL_FILE}" ] || [ -z "${INITRD_FILE}" ]; then
     echo "ERROR: one or more build artifacts not found under ${DEPLOY}"
-    echo "  wic:    ${WIC_FILE:-<missing>}"
+    echo "  ext4:   ${EXT4_FILE:-<missing>}"
     echo "  kernel: ${KERNEL_FILE:-<missing>}"
     echo "  initrd: ${INITRD_FILE:-<missing>}"
     echo
@@ -37,7 +37,7 @@ if [ -z "${WIC_FILE}" ] || [ -z "${KERNEL_FILE}" ] || [ -z "${INITRD_FILE}" ]; t
     exit 1
 fi
 
-echo "wic:    ${WIC_FILE}"
+echo "ext4:   ${EXT4_FILE}"
 echo "kernel: ${KERNEL_FILE}"
 echo "initrd: ${INITRD_FILE}"
 echo
@@ -55,9 +55,9 @@ exec qemu-system-x86_64 \
     -machine q35,accel=${ACCEL} \
     -kernel "${KERNEL_FILE}" \
     -initrd "${INITRD_FILE}" \
-    -drive file="${WIC_FILE}",discard=unmap,if=none,id=disk,format=raw \
-    -device virtio-blk-pci,drive=disk \
-    -append "root=LABEL=root rw rootwait console=ttyS0,115200 console=tty0" \
+    -drive file="${EXT4_FILE}",discard=unmap,if=none,id=disk,format=raw \
+    -device ide-hd,drive=disk \
+    -append "root=/dev/sda rw rootwait console=ttyS0,115200 console=tty0" \
     -serial mon:stdio \
     -netdev user,id=net,hostfwd=tcp:127.0.0.1:22222-:22 \
     -device virtio-net-pci,netdev=net \

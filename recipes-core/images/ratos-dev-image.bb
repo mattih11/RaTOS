@@ -57,22 +57,12 @@ set_hostname() {
 
 # Permit root SSH login and password auth for the developer VM image.
 # This is intentional: the image is for local QEMU development only.
+# Note: root password ("root") is set by xenomai-demo.conf via ISAR's USERS
+# mechanism (USER_root[password]) — no chpasswd needed here.
 configure_sshd() {
     sudo mkdir -p "${ROOTFSDIR}/etc/ssh/sshd_config.d"
     printf 'PermitRootLogin yes\nPasswordAuthentication yes\n' | \
         sudo tee "${ROOTFSDIR}/etc/ssh/sshd_config.d/99-ratos-dev.conf" > /dev/null
-    # Set a default root password (dev image only — not for production use)
-    printf 'root:ratos\n' | sudo chroot "${ROOTFSDIR}" chpasswd
 }
 
-# Ensure virtio-blk and virtio-pci are included in the initramfs so the QEMU
-# wic image can be booted with -device virtio-blk-pci. initramfs-tools reads
-# /etc/initramfs-tools/modules and includes the listed modules.
-configure_initramfs() {
-    sudo mkdir -p "${ROOTFSDIR}/etc/initramfs-tools"
-    printf 'virtio_blk\nvirtio_pci\n' | \
-        sudo tee "${ROOTFSDIR}/etc/initramfs-tools/modules" > /dev/null
-    sudo chroot "${ROOTFSDIR}" update-initramfs -u -k all
-}
-
-ROOTFS_POSTPROCESS_COMMAND =+ "set_hostname configure_sshd configure_initramfs"
+ROOTFS_POSTPROCESS_COMMAND =+ "set_hostname configure_sshd"
