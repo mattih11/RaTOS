@@ -8,9 +8,10 @@ cross-compilation SDK, and **run/test inside QEMU**.
 
 | Commit | Change |
 |---|---|
-| `a198ab5` | QEMU boot switched to raw `ext4` + `-device ide-hd` (aligns with upstream xenomai-images). No virtio modules needed. Root password is `root` (set by `xenomai-demo.conf`). `scripts/start-qemu.sh` updated accordingly. |
+| `a198ab5` | QEMU boot switched to raw `ext4` + `-device ide-hd` (aligns with upstream xenomai-images). `scripts/start-qemu.sh` updated accordingly. |
 | `a198ab5` | `IMAGE_FSTYPES` for `container-amd64` is now `docker-archive.gz ext4 wic.gz`. The `ext4` file is used by `start-qemu.sh`; the `wic.gz` is the CI release artifact. |
-| CI | SDK build step added for version-tag builds. The SDK installer (`ratos-dev-sdk-container-amd64.*`) is published as a release asset. Compressed ext4 (`ratos-dev-image-container-amd64.ext4.gz`) also published so you can boot from CI artifacts without rebuilding. |
+| post-`a198ab5` | Console hang fixed: `console=ttyS0` only (no `console=tty0`). With dual `console=` the last entry becomes `/dev/console`; with `tty0` last, systemd sent all output to VGA (invisible under `-nographic`). Single `console=ttyS0` lets `systemd-getty-generator` auto-start `serial-getty@ttyS0`. Also switched to `-cpu host -enable-kvm` (matching upstream). `CONFIG_SATA_AHCI=y` — AHCI is built-in, no initramfs changes needed. |
+| `574f4f9` | SDK build step added for version-tag CI runs. The SDK installer (`ratos-dev-sdk-container-amd64.*`) is a release asset. Compressed ext4 (`ratos-dev-image-container-amd64.ext4.gz`) also published so you can boot from CI artifacts without rebuilding. |
 
 ---
 
@@ -115,7 +116,7 @@ qemu-system-x86_64 \
   -initrd initrd.img \
   -drive file=ratos-dev-image-container-amd64.ext4,discard=unmap,if=none,id=disk,format=raw \
   -device ide-hd,drive=disk \
-  -append "root=/dev/sda rw rootwait console=ttyS0,115200 console=tty0" \
+  -append "root=/dev/sda rw rootwait console=ttyS0" \
   -serial mon:stdio \
   -netdev user,id=net,hostfwd=tcp:127.0.0.1:22222-:22 \
   -device virtio-net-pci,netdev=net \

@@ -42,22 +42,29 @@ echo "kernel: ${KERNEL_FILE}"
 echo "initrd: ${INITRD_FILE}"
 echo
 
-# Use KVM if the device node is accessible.
-ACCEL="tcg"
+# Align with upstream xenomai-images/start-qemu.sh:
+#   - KVM via -cpu host -enable-kvm; fall back to TCG with -cpu qemu64
+#   - Single console=ttyS0 only — systemd-getty-generator auto-starts
+#     serial-getty@ttyS0 when ttyS0 is the sole (and therefore primary)
+#     console=. Adding console=tty0 as well makes tty0 /dev/console and
+#     sends all systemd output to the VGA device, which is invisible with
+#     -nographic, causing a silent hang.
 if [ -w /dev/kvm ]; then
-    ACCEL="kvm"
+    CPU_ARGS="-cpu host -enable-kvm"
+else
+    CPU_ARGS="-cpu qemu64"
 fi
 
 exec qemu-system-x86_64 \
-    -cpu qemu64 \
+    ${CPU_ARGS} \
     -smp 4 \
     -m 2G \
-    -machine q35,accel=${ACCEL} \
+    -machine q35 \
     -kernel "${KERNEL_FILE}" \
     -initrd "${INITRD_FILE}" \
     -drive file="${EXT4_FILE}",discard=unmap,if=none,id=disk,format=raw \
     -device ide-hd,drive=disk \
-    -append "root=/dev/sda rw rootwait console=ttyS0,115200 console=tty0" \
+    -append "root=/dev/sda rw rootwait console=ttyS0" \
     -serial mon:stdio \
     -netdev user,id=net,hostfwd=tcp:127.0.0.1:22222-:22 \
     -device virtio-net-pci,netdev=net \
