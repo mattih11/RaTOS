@@ -27,7 +27,7 @@ kas-container menu
 |---|---|---|
 | **Target — production** (A/B SWUpdate OTA) | `kas-container --isar build kas.yaml:kas/board/<board>.yaml:kas/opt/swupdate.yaml` | `.wic` + `.wic.gz` + `.swu` |
 | **Target — development** (single-root) | `kas-container --isar build kas.yaml:kas/board/<board>.yaml` | `.wic` + `.wic.gz` |
-| **Dev container** (amd64 host) | `kas-container --isar build kas.yaml:kas/board/container-amd64.yaml` | `docker-archive.gz` + `wic.gz` + `vmlinuz` + `initrd.img` |
+| **Dev container** (amd64 host) | `kas-container --isar build kas.yaml:kas/board/container-amd64.yaml` | `docker-archive.gz` + `ext4` + `wic.gz` + `vmlinuz` + `initrd.img` |
 
 Replace `<board>` with the board overlay from `kas/board/` that matches your hardware.
 The current in-tree board is `odroid-h4` (Intel Alder Lake-N N97, amd64, standard UEFI).
@@ -40,27 +40,40 @@ The current in-tree board is `odroid-h4` (Intel Alder Lake-N N97, amd64, standar
 | Board `.wic.gz` | `build/tmp/deploy/images/<board>/ratos-image*-<board>.wic.gz` |
 | Board `.swu` | `build/tmp/deploy/images/<board>/ratos-image-swupdate*-<board>.swu` |
 | Dev container docker | `build/tmp/deploy/images/container-amd64/ratos-dev-image*-amd64.docker-archive.gz` |
+| Dev container ext4 | `build/tmp/deploy/images/container-amd64/ratos-dev-image*-container-amd64.ext4` |
 | Dev container wic | `build/tmp/deploy/images/container-amd64/ratos-dev-image*-container-amd64.wic.gz` |
 | Dev kernel | `build/tmp/deploy/images/container-amd64/ratos-dev-image*-container-amd64-vmlinuz` |
 | Dev initrd | `build/tmp/deploy/images/container-amd64/ratos-dev-image*-container-amd64-initrd.img` |
 
 ## Boot the Developer Image in QEMU
 
-The dev container build also produces a QEMU-bootable raw disk image (`wic.gz`).
-Boot it directly using the separate kernel and initrd artifacts:
+The simplest way is the helper script (uses `ext4` + KVM if available):
+
+```bash
+./scripts/start-qemu.sh
+```
+
+Or manually, using the local build outputs:
 
 ```bash
 DEPLOY=build/tmp/deploy/images/container-amd64
+ACCEL=tcg; [ -w /dev/kvm ] && ACCEL=kvm
 qemu-system-x86_64 \
-  -m 2G -smp 4 -nographic \
+  -cpu host -enable-kvm -smp 4 -m 2G \
+  -machine q35,accel=${ACCEL} \
   -kernel  ${DEPLOY}/ratos-dev-image-ratos-container-amd64-vmlinuz \
   -initrd  ${DEPLOY}/ratos-dev-image-ratos-container-amd64-initrd.img \
-  -drive   file=${DEPLOY}/ratos-dev-image-ratos-container-amd64.wic,format=raw \
-  -append  "root=LABEL=root rw console=ttyS0,115200 console=tty0"
+  -drive   file=${DEPLOY}/ratos-dev-image-ratos-container-amd64.ext4,discard=unmap,if=none,id=disk,format=raw \
+  -device  ide-hd,drive=disk \
+  -append  "root=/dev/sda rw rootwait console=ttyS0" \
+  -serial  mon:stdio \
+  -netdev  user,id=net,hostfwd=tcp:127.0.0.1:22222-:22 \
+  -device  virtio-net-pci,netdev=net \
+  -nographic
 ```
 
-Or use the downloaded CI artifacts (the wic.gz is automatically decompressed by QEMU's
-`-drive` when given as a `.gz`, or decompress manually first with `gunzip`).
+See [docs/commrat-dev-guide.md](docs/commrat-dev-guide.md) for the full workflow
+including booting from CI artifacts.
 
 ```bash
 dd if=build/tmp/deploy/images/<board>/ratos-image-ratos-<board>.wic \
@@ -145,7 +158,14 @@ that runs on every push to `main`, on version tags (`v*`), and on manual trigger
 | `vmlinuz` | EVL kernel image |
 | `initrd.img` | initrd for QEMU boot |
 | `ratos-dev-image.docker-archive.gz` | Docker rootfs archive |
-| `ratos-dev-image-container-amd64.wic.gz` | QEMU / raw-disk image (compressed) |
+| `ratos-dev-image-container-amd64.ext4.gz` | Raw ext4 rootfs (gzip) — used by `start-qemu.sh` and CI boot |
+| `ratos-dev-image-container-amd64.wic.gz` | QEMU-bootable wic disk image (gzip, with partition table) |
+
+**container-amd64** (version tags only):
+
+| File | Description |
+|---|---|
+| `ratos-dev-sdk-container-amd64.*` | Cross-compilation SDK (`tar.xz` rootfs — extract and run `relocate-sdk.sh`) |
 
 **odroid-h4** (`continue-on-error` — attached if the build succeeds):
 
