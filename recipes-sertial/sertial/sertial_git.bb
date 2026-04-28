@@ -17,7 +17,11 @@ S = "${WORKDIR}/git"
 
 inherit dpkg
 
+# Declare Debian binary package names as BitBake providers so
+# SDK_INSTALL += "libsertial-dev" resolves correctly.
 DEPENDS = "reflect-cpp"
+
+PROVIDES += "libsertial-dev sertial-tools"
 
 do_prepare_build() {
     cp -Trl -- "${WORKDIR}/debian" "${S}/debian"

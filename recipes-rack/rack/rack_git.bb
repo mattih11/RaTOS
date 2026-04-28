@@ -20,6 +20,10 @@ S = "${WORKDIR}/git/rack"
 
 inherit dpkg
 
+# Declare Debian binary package names as BitBake providers so
+# SDK_INSTALL += "rack-dev" resolves correctly.
+PROVIDES += "rack-dev rack-tools"
+
 do_prepare_build() {
     cp -Trl -- "${WORKDIR}/debian" "${S}/debian"
     chmod +x "${S}/debian/rules"

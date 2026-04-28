@@ -17,6 +17,10 @@ S = "${WORKDIR}/git"
 
 inherit dpkg
 
+# Declare the Debian binary package name as a BitBake provider so
+# SDK_INSTALL += "libreflect-cpp-dev" resolves correctly.
+PROVIDES += "libreflect-cpp-dev"
+
 do_prepare_build() {
     cp -Trl -- "${WORKDIR}/debian" "${S}/debian"
     chmod +x "${S}/debian/rules"
