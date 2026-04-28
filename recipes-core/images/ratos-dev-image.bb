@@ -61,7 +61,7 @@ set_hostname() {
 # mechanism (USER_root[password]) — no chpasswd needed here.
 configure_sshd() {
     sudo mkdir -p "${ROOTFSDIR}/etc/ssh/sshd_config.d"
-    printf 'PermitRootLogin yes\nPasswordAuthentication yes\n' | \
+    printf 'PermitRootLogin yes\nPasswordAuthentication yes\nPubkeyAuthentication yes\n' | \
         sudo tee "${ROOTFSDIR}/etc/ssh/sshd_config.d/99-ratos-dev.conf" > /dev/null
 }
 
