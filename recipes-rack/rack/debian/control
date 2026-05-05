@@ -10,10 +10,11 @@ Standards-Version: 4.6.0
 
 Package: rack
 Architecture: any
-Depends: ${misc:Depends}, ${shlibs:Depends}
+Depends: ${misc:Depends}, ${shlibs:Depends}, init-system-helpers (>= 1.54~)
 Description: RACK - Robotics Application Construction Kit
  Provides the TiMS (Tube IPC Message Service) real-time IPC backend used
  by CommRaT for inter-module message passing on Xenomai/EVL systems.
+ Includes the tims_router_tcp systemd service, enabled on install.
 
 Package: rack-dev
 Architecture: any

@@ -1,0 +1,14 @@
+[Unit]
+Description=TiMS TCP Router
+Documentation=https://github.com/mattih11/RACK
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/tims_router_tcp
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target
