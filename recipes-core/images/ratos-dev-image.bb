@@ -35,6 +35,7 @@ IMAGE_PREINSTALL += " \
     python3 python3-pip \
     clang-format clang-tidy \
     openssh-server \
+    rsync \
     "
 
 # RaTOS and EVL development libraries (headers + link stubs)
