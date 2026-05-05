@@ -55,14 +55,29 @@ set_hostname() {
     echo "${HOSTNAME}" | sudo tee "${ROOTFSDIR}/etc/hostname" > /dev/null
 }
 
+# Enable DHCP on all ethernet interfaces via systemd-networkd for QEMU SLIRP networking.
+configure_networking() {
+    sudo mkdir -p "${ROOTFSDIR}/etc/systemd/network"
+    printf '[Match]\nName=en*\n\n[Network]\nDHCP=yes\n' | \
+        sudo tee "${ROOTFSDIR}/etc/systemd/network/10-dhcp.network" > /dev/null
+    sudo mkdir -p "${ROOTFSDIR}/etc/systemd/system/multi-user.target.wants"
+    sudo ln -sf /usr/lib/systemd/system/systemd-networkd.service \
+        "${ROOTFSDIR}/etc/systemd/system/multi-user.target.wants/systemd-networkd.service"
+}
+
 # Permit root SSH login and password auth for the developer VM image.
 # This is intentional: the image is for local QEMU development only.
 # Note: root password ("root") is set by xenomai-demo.conf via ISAR's USERS
 # mechanism (USER_root[password]) — no chpasswd needed here.
 configure_sshd() {
     sudo mkdir -p "${ROOTFSDIR}/etc/ssh/sshd_config.d"
-    printf 'PermitRootLogin yes\nPasswordAuthentication yes\nPubkeyAuthentication yes\n' | \
+    printf 'PermitRootLogin yes\nPasswordAuthentication yes\nPubkeyAuthentication yes\nListenAddress 0.0.0.0\nUseDNS no\n' | \
         sudo tee "${ROOTFSDIR}/etc/ssh/sshd_config.d/99-ratos-dev.conf" > /dev/null
+    # Disable socket activation so sshd binds its own sockets and respects
+    # ListenAddress. Without this, systemd passes an IPv6-only socket and
+    # QEMU's IPv4 port-forward (hostfwd=tcp:127.0.0.1:22222-:22) cannot connect.
+    sudo mkdir -p "${ROOTFSDIR}/etc/systemd/system"
+    sudo ln -sf /dev/null "${ROOTFSDIR}/etc/systemd/system/ssh.socket"
 }
 
-ROOTFS_POSTPROCESS_COMMAND =+ "set_hostname configure_sshd"
+ROOTFS_POSTPROCESS_COMMAND =+ "set_hostname configure_networking configure_sshd"
