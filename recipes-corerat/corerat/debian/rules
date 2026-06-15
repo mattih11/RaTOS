@@ -1,0 +1,22 @@
+#!/usr/bin/make -f
+
+%:
+	dh $@ --buildsystem=cmake
+
+override_dh_auto_configure:
+	dh_auto_configure -- \
+	    -DCORERAT_BUILD_TESTS=OFF \
+	    -DCORERAT_BUILD_EXAMPLES=OFF
+
+override_dh_auto_install:
+	dh_auto_install --destdir=debian/tmp
+
+	# Split headers+static lib into libcorerat-dev
+	install -d debian/libcorerat-dev/usr
+	cp -r debian/tmp/usr/include debian/libcorerat-dev/usr/
+	cp -r debian/tmp/usr/lib     debian/libcorerat-dev/usr/
+
+	# Split corerat-router-tcp into corerat-tools
+	install -d debian/corerat-tools/usr/bin
+	install -m 755 debian/tmp/usr/bin/corerat-router-tcp \
+	               debian/corerat-tools/usr/bin/

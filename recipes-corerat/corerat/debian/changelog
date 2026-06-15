@@ -1,0 +1,5 @@
+corerat (0.0+git1) trixie; urgency=low
+
+  * Initial RaTOS packaging.
+
+ -- Matthias Haase <mattihaase@proton.me>  Sun, 15 Jun 2026 00:00:00 +0000
