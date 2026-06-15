@@ -15,7 +15,7 @@ SRCREV = "${AUTOREV}"
 PV = "0.0+git${SRCPV}"
 S = "${WORKDIR}/git"
 
-DEPENDS = "sertial"
+DEPENDS = "sertial reflect-cpp"
 
 inherit dpkg
 

@@ -11,7 +11,7 @@ LICENSE = "GPL-2.0-or-later"
 
 SRC_URI = "git://github.com/mattih11/CommRaT.git;protocol=https;branch=feature/mailbox-cleanup \
            file://debian/"
-SRCREV = "${AUTOREV}"
+SRCREV = "72cb3cad2a042ff1086f822007817f862cd87821"
 PV = "0.0+git${SRCPV}"
 S = "${WORKDIR}/git"
 
