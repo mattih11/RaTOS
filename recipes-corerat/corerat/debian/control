@@ -19,6 +19,6 @@ Description: CoreRaT - C++20 real-time platform abstraction (dev headers + stati
 
 Package: corerat-tools
 Architecture: any
-Depends: ${misc:Depends}, ${shlibs:Depends}
+Depends: ${misc:Depends}, ${shlibs:Depends}, systemd
 Description: CoreRaT tools (corerat-router-tcp)
  TiMS-compatible TCP router for use with CommRaT and CoreRaT-based applications.

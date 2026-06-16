@@ -17,7 +17,7 @@ DESCRIPTION = "RaTOS developer container image with EVL/Xenomai 4 toolchain"
 HOSTNAME = "ratos-dev"
 
 # Entire RaTOS stack built by local recipes
-DEPENDS = "rack reflect-cpp sertial corerat commrat"
+DEPENDS = "reflect-cpp sertial corerat commrat"
 
 # Ensure the EVL kernel and libevl are built and deployed to isar-apt before
 # do_rootfs_install runs. image.bbclass adds linux-image-xenomai-4 (package name)
@@ -42,7 +42,6 @@ IMAGE_PREINSTALL += " \
 # libevl ships headers in the main package (no separate -dev split)
 IMAGE_INSTALL += " \
     libevl \
-    rack-dev \
     libreflect-cpp-dev \
     libsertial-dev \
     libcorerat-dev \

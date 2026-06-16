@@ -12,7 +12,7 @@ ISAR_RELEASE_CMD = "git -C ${LAYERDIR_ratos} describe --tags \
 DESCRIPTION = "RaTOS real-time image (Xenomai/EVL, Odroid H4)"
 
 # Local dependencies for our provided packages
-DEPENDS = "rack reflect-cpp sertial corerat commrat"
+DEPENDS = "reflect-cpp sertial corerat commrat"
 
 # EFI Boot Guard must be built so the wic imager can install it into the build schroot.
 # (Does NOT install efibootguard-tools into the target rootfs — only ensures build+deploy.)
@@ -37,6 +37,6 @@ IMAGE_INSTALL += "customizations sshd-regen-keys expand-on-first-boot"
 
 # RaTOS dependencies: built by local recipes and installed into the image.
 # Package names come from each recipe's debian/control, not the recipe name.
-IMAGE_INSTALL += "rack rack-dev libreflect-cpp-dev libsertial-dev sertial-tools libcorerat-dev corerat-tools libcommrat-dev"
+IMAGE_INSTALL += "libreflect-cpp-dev libsertial-dev sertial-tools libcorerat-dev corerat-tools libcommrat-dev"
 
 ROOTFS_FEATURES:remove = "generate-sbom"

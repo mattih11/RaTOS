@@ -1,4 +1,0 @@
-usr/include/rack/*
-usr/lib/*/librack.so
-usr/lib/*/cmake/RACK/*
-usr/bin/rack-config

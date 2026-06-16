@@ -1,12 +1,12 @@
 [Unit]
-Description=TiMS TCP Router
-Documentation=https://github.com/mattih11/RACK
+Description=CoreRaT TiMS TCP Router
+Documentation=https://github.com/ratos-project/corerat
 After=network.target
 Wants=network.target
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/tims_router_tcp
+ExecStart=/usr/bin/corerat-router-tcp
 Restart=on-failure
 RestartSec=5s
 
