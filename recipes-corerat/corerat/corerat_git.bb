@@ -1,6 +1,6 @@
 #
 # RaTOS Real-Time OS
-# Recipe: CoreRaT - platform abstraction, wire types, TiMS IPC backend
+# Recipe: CoreRaT - platform abstraction, wire types, EVL IPC backend
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
@@ -15,7 +15,7 @@ SRCREV = "${AUTOREV}"
 PV = "0.0+git${SRCPV}"
 S = "${WORKDIR}/git"
 
-DEPENDS = "sertial reflect-cpp"
+DEPENDS = "sertial reflect-cpp libevl"
 
 inherit dpkg
 

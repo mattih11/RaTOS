@@ -1,12 +1,12 @@
 [Unit]
-Description=CoreRaT TiMS TCP Router
+Description=CoreRaT EVL Router
 Documentation=https://github.com/ratos-project/corerat
 After=network.target
 Wants=network.target
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/corerat-router-tcp
+ExecStart=/usr/bin/corerat-router-evl
 Restart=on-failure
 RestartSec=5s
 
