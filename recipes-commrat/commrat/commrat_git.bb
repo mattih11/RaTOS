@@ -15,7 +15,7 @@ SRCREV = "72cb3cad2a042ff1086f822007817f862cd87821"
 PV = "0.0+git${SRCPV}"
 S = "${WORKDIR}/git"
 
-DEPENDS = "sertial reflect-cpp corerat"
+DEPENDS = "sertial reflect-cpp corerat libevl"
 
 inherit dpkg
 

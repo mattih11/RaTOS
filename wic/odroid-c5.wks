@@ -1,0 +1,27 @@
+#
+# RaTOS Real-Time OS
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+# Odroid C5 — SD/eMMC disk layout (Amlogic S905X5M)
+#
+# Amlogic boot ROM loads the FIP binary (BL2 + DDR init + BL31 + U-Boot)
+# from offset 8 KiB on the storage medium.
+#
+# Partition map:
+#   [0 – 8 KiB)   reserved (partition table / MBR)
+#   [8 KiB – …)   U-Boot FIP (raw, no partition entry)
+#   [1 MiB – …)   rootfs (ext4, partition entry, expandable)
+#
+
+# U-Boot FIP at sector 1 (512 bytes) — matches Hardkernel sd_fusing.sh:
+#   dd if=u-boot.bin of=<dev> bs=512 seek=1
+part u-boot --source rawcopy \
+    --sourceparams "file=/usr/lib/u-boot/odroidc5/u-boot.bin" \
+    --no-table --offset 1S
+
+# Root filesystem at 1 MiB
+part / --source rootfs-u-boot --use-uuid --fstype ext4 \
+    --label platform --align 1024 --active
+
+bootloader --append "rw rootwait"

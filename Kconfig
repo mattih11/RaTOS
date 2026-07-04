@@ -15,6 +15,18 @@ choice
 config TARGET_ODROID_H4
         bool "Odroid H4 (Intel Alder Lake-N, amd64 EFI)"
 
+config TARGET_ODROID_C5
+        bool "Odroid C5 (Amlogic S905X5M, ARM64)"
+        help
+          ARM64 single-board computer with Amlogic S905X5M SoC.
+          Requires a u-boot-odroid-c5 recipe (see conf/machine/odroid-c5.conf).
+
+config TARGET_ODROID_M1S
+        bool "Odroid M1S (Rockchip RK3566, ARM64)"
+        help
+          ARM64 single-board computer with Rockchip RK3566 SoC.
+          Requires a u-boot-odroid-m1s recipe (see conf/machine/odroid-m1s.conf).
+
 config TARGET_CONTAINER_AMD64
         bool "Developer container image (amd64 docker-archive + QEMU ext4)"
         help
@@ -32,6 +44,8 @@ endchoice
 config KAS_INCLUDE_TARGET
         string
         default "kas/board/odroid-h4.yaml"       if TARGET_ODROID_H4
+        default "kas/board/odroid-c5.yaml"        if TARGET_ODROID_C5
+        default "kas/board/odroid-m1s.yaml"       if TARGET_ODROID_M1S
         default "kas/board/container-amd64.yaml"  if TARGET_CONTAINER_AMD64
 
 if TARGET_ODROID_H4

@@ -1,0 +1,15 @@
+#
+# RaTOS Real-Time OS
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+# Odroid M1S (Rockchip RK3566, ARM64)
+#
+# Usage:
+#   kas-container --isar build kas.yaml:kas/board/odroid-m1s.yaml
+#
+
+header:
+  version: 14
+
+machine: odroid-m1s

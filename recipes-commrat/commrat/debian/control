@@ -7,13 +7,14 @@ Build-Depends: debhelper-compat (= 13),
                g++ (>= 10),
                libsertial-dev,
                libreflect-cpp-dev,
-               libcorerat-dev
+               libcorerat-dev,
+               libevl
 Standards-Version: 4.6.0
 
 Package: libcommrat-dev
 Architecture: any
 Depends: ${misc:Depends}, ${shlibs:Depends},
-         libsertial-dev, libreflect-cpp-dev, libcorerat-dev
+         libsertial-dev, libreflect-cpp-dev, libcorerat-dev, libevl
 Description: CommRaT - C++20 real-time communication framework (dev headers)
  Combines RACK's TiMS IPC message service with SeRTial's zero-allocation
  serialization. Provides compile-time type-safe messaging, module framework,

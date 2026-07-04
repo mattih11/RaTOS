@@ -1,0 +1,30 @@
+#
+# RaTOS Real-Time OS
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+# Odroid M1S — SD/eMMC disk layout (Rockchip RK3566)
+#
+# Rockchip RK3566 two-stage boot layout (GPT):
+#   sector    64 (  32 KiB)  idbloader.img  — DDR init + SPL miniloader
+#   sector 16384 (   8 MiB)  u-boot.itb     — U-Boot + TF-A BL31
+#   sector 32768 (  16 MiB)  rootfs (ext4, partition entry, expandable)
+#
+
+# SPL/idbloader at sector 64 (32 KiB) — matches Hardkernel sd_fusing.sh:
+#   dd if=u-boot-spl.img of=<dev> bs=512 seek=64
+part spl --source rawcopy \
+    --sourceparams "file=/usr/lib/u-boot/odroidm1s/u-boot-spl.img" \
+    --no-table --offset 64S
+
+# U-Boot proper at sector 2048 (1 MiB) — matches Hardkernel sd_fusing.sh:
+#   dd if=uboot.img of=<dev> bs=512 seek=2048
+part uboot --source rawcopy \
+    --sourceparams "file=/usr/lib/u-boot/odroidm1s/uboot.img" \
+    --no-table --offset 2048S
+
+# Root filesystem starting at 8 MiB (leaves room for uboot.img)
+part / --source rootfs-u-boot --use-uuid --fstype ext4 \
+    --label platform --align 8192 --active
+
+bootloader --ptable gpt --append "rw rootwait"
