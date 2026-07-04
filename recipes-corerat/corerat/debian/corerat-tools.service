@@ -6,7 +6,7 @@ Wants=network.target
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/corerat-router-evl
+ExecStart=/usr/bin/corerat-router-tcp
 Restart=on-failure
 RestartSec=5s
 
