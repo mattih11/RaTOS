@@ -108,11 +108,12 @@ image to build.  Both are implemented in the repository.
 
 ---
 
-## Solution C — Separate BitBake metadata layers (for true team / repo separation)
+## Solution C — Separate BitBake metadata layers (future work)
 
-Use this when CoreRaT or CommRaT are owned by separate teams with independent
-release cadences, or when their recipes must be versioned independently of
-RaTOS itself.
+This section describes how to split the monorepo into separate metadata layers
+when CoreRaT or CommRaT need independent release cadences or are owned by
+separate teams.  **This is not yet implemented** — Solutions A and B above are
+what is in the repository today.
 
 ### Proposed structure
 

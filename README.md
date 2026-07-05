@@ -23,27 +23,63 @@ kas-container menu
 
 ## Image Types
 
-| Image type | kas command | Output |
-|---|---|---|
-| **Target — production** (A/B SWUpdate OTA) | `kas-container --isar build kas.yaml:kas/board/<board>.yaml:kas/opt/swupdate.yaml` | `.wic` + `.wic.gz` + `.swu` |
-| **Target — development** (single-root) | `kas-container --isar build kas.yaml:kas/board/<board>.yaml` | `.wic` + `.wic.gz` |
-| **Dev container** (amd64 host) | `kas-container --isar build kas.yaml:kas/board/container-amd64.yaml` | `docker-archive.gz` + `ext4` + `wic.gz` + `vmlinuz` + `initrd.img` |
+RaTOS provides four **layered development images** plus the full production and
+developer-container images.  Each layer adds one component on top of the previous.
+Use the smallest image that satisfies your development needs — it is faster to
+build and test and avoids conflicts with pre-installed versions of the component
+you are working on.
+
+| Layer | Image recipe | KAS command | Typical use |
+|---|---|---|---|
+| 1 | `ratos-evl-image` | `kas.yaml:kas/board/<board>.yaml:kas/target/evl.yaml` | CoreRaT development — bare EVL, no CoreRaT pre-installed |
+| 2 | `ratos-corerat-image` | `kas.yaml:kas/board/<board>.yaml:kas/target/corerat.yaml` | CommRaT development — CoreRaT pre-installed |
+| 3 | `ratos-commrat-image` | `kas.yaml:kas/board/<board>.yaml:kas/target/commrat.yaml` | Application development — CoreRaT + CommRaT pre-installed |
+| 4 | `ratos-image` | `kas.yaml:kas/board/<board>.yaml` | Production / QA — full stack |
+| — | `ratos-image-swupdate` | `kas.yaml:kas/board/<board>.yaml:kas/opt/swupdate.yaml` | Production with A/B OTA (extends layer 4) |
+| — | `ratos-dev-image` | `kas.yaml:kas/board/container-amd64.yaml` | Dev container — full stack + build toolchain, SDK |
 
 Replace `<board>` with the board overlay from `kas/board/` that matches your hardware.
-The current in-tree board is `odroid-h4` (Intel Alder Lake-N N97, amd64, standard UEFI).
+The current in-tree boards are `odroid-h4` (Intel N-series, UEFI), `odroid-c5` (Amlogic S905X5M), and `odroid-m1s` (Rockchip RK3566).
+
+See [docs/layered-development-guide.md](docs/layered-development-guide.md) for a detailed
+explanation of the layering model and how to choose the right image.
 
 ## Output Files
 
-| Target | Path |
+All files land under `build/tmp/deploy/images/<machine>/`.  Replace `<image>` with
+the image recipe name (e.g. `ratos-evl-image`, `ratos-corerat-image`, `ratos-dev-image`).
+
+| Target | Path pattern |
 |---|---|
-| Board `.wic` | `build/tmp/deploy/images/<board>/ratos-image*-<board>.wic` |
-| Board `.wic.gz` | `build/tmp/deploy/images/<board>/ratos-image*-<board>.wic.gz` |
-| Board `.swu` | `build/tmp/deploy/images/<board>/ratos-image-swupdate*-<board>.swu` |
-| Dev container docker | `build/tmp/deploy/images/container-amd64/ratos-dev-image*-amd64.docker-archive.gz` |
-| Dev container ext4 | `build/tmp/deploy/images/container-amd64/ratos-dev-image*-container-amd64.ext4` |
-| Dev container wic | `build/tmp/deploy/images/container-amd64/ratos-dev-image*-container-amd64.wic.gz` |
-| Dev kernel | `build/tmp/deploy/images/container-amd64/ratos-dev-image*-container-amd64-vmlinuz` |
-| Dev initrd | `build/tmp/deploy/images/container-amd64/ratos-dev-image*-container-amd64-initrd.img` |
+| Board `.wic.gz` | `<image>-ratos-<board>.wic.gz` |
+| Board `.swu` (SWUpdate) | `ratos-image-swupdate-ratos-<board>.swu` |
+| container-amd64 `ext4` | `<image>-ratos-container-amd64.ext4` |
+| container-amd64 `wic.gz` | `<image>-ratos-container-amd64.wic.gz` |
+| container-amd64 kernel | `<image>-ratos-container-amd64-vmlinuz` |
+| container-amd64 initrd | `<image>-ratos-container-amd64-initrd.img` |
+| Dev container docker | `ratos-dev-image-ratos-amd64.docker-archive.gz` |
+
+## Layered Development Images
+
+RaTOS follows a layered model where each image adds exactly one component.
+Build the smallest image that contains your runtime dependency — the one below it.
+
+| Layer | Image | Contains | Use when developing |
+|---|---|---|---|
+| 1 | `ratos-evl-image` | EVL kernel + libevl | **CoreRaT** |
+| 2 | `ratos-corerat-image` | Layer 1 + CoreRaT | **CommRaT** |
+| 3 | `ratos-commrat-image` | Layer 2 + CommRaT | Applications on top of CommRaT |
+| 4 | `ratos-image` | Full production stack | QA / release |
+
+```sh
+# Example: CommRaT developer boots layer 2 — CoreRaT pre-installed, no CommRaT
+kas-container --isar build kas.yaml:kas/board/container-amd64.yaml:kas/target/corerat.yaml
+```
+
+For the full explanation, QEMU boot instructions per layer, and guidance on
+future repo separation, see [docs/layered-development-guide.md](docs/layered-development-guide.md).
+
+---
 
 ## Boot the Developer Image in QEMU
 
@@ -72,8 +108,9 @@ qemu-system-x86_64 \
   -nographic
 ```
 
-See [docs/commrat-dev-guide.md](docs/commrat-dev-guide.md) for the full workflow
-including booting from CI artifacts.
+See [docs/commrat-dev-guide.md](docs/commrat-dev-guide.md) for the full CommRaT
+developer workflow.  For CoreRaT or CommRaT development, use the matching
+layered image — see [docs/layered-development-guide.md](docs/layered-development-guide.md).
 
 ```bash
 dd if=build/tmp/deploy/images/<board>/ratos-image-ratos-<board>.wic \
@@ -111,18 +148,26 @@ podman run -it --rm -v $PWD:/workspace ratos-dev-image:latest
 kas.yaml                       # top-level kas config (distro, repos)
 Kconfig                        # interactive build menu
 kas/board/                     # per-board kas overlays (one file per board)
+kas/target/                    # image-selection overlays (evl / corerat / commrat)
 kas/opt/                       # optional feature overlays (swupdate, ...)
 conf/machine/                  # machine configs (DISTRO_ARCH, EBG, WKS_FILE)
 conf/distro/                   # distro config (extends xenomai-demo)
-recipes-core/images/           # image recipes
-  ratos-image.bb               # single-root development image
-  ratos-image-swupdate.bb      # A/B SWUpdate production image (extends above)
-  ratos-dev-image.bb           # developer container image
-recipes-rack/                  # RACK middleware
+recipes-core/images/
+  ratos-container-qemu-setup.inc  # shared QEMU hostname / network / sshd setup
+  ratos-evl-image.bb              # layer 1: EVL kernel + libevl
+  ratos-corerat-image.bb          # layer 2: layer 1 + CoreRaT
+  ratos-commrat-image.bb          # layer 3: layer 2 + CommRaT
+  ratos-image.bb                  # layer 4: full production image
+  ratos-image-swupdate.bb         # layer 4 + A/B SWUpdate OTA
+  ratos-dev-image.bb              # developer container (full stack + toolchain)
+recipes-corerat/               # CoreRaT platform library recipe
+recipes-commrat/               # CommRaT communication framework recipe
 recipes-sertial/               # SeRTial serialization library
 recipes-reflect-cpp/           # reflect-cpp (SeRTial dependency)
-recipes-commrat/               # CommRaT application
+recipes-xenomai/               # libevl bbappend
+recipes-bsp/                   # U-Boot recipe
 wic/                           # disk layouts (one set per board)
+docs/                          # developer guides
 ```
 
 ## Key Dependencies (submodules / kas-pinned repos)
@@ -144,8 +189,9 @@ that runs on every push to `main`, on version tags (`v*`), and on manual trigger
 
 | Step | Details |
 |---|---|
-| **Build (matrix)** | Runs one job per machine in parallel. `container-amd64` builds `ratos-dev-image`; `odroid-h4` builds `ratos-image` (marked `continue-on-error` until validated on CI runners). Timeout: 180 min per job. |
-| **GHCR push** | Loads the `.docker-archive.gz` and pushes `ghcr.io/<owner>/ratos-dev-image:latest` and `ghcr.io/<owner>/ratos-dev-image:<git-sha>`. |
+| **Build (matrix)** | One job per machine in parallel. `container-amd64` builds `ratos-dev-image` then all three layered images (EVL → CoreRaT → CommRaT); `odroid-h4` builds `ratos-image` (`continue-on-error`). Timeout: 180 min. |
+| **Layered builds** | After the main `container-amd64` build, the three layered images are built in the same job, reusing sstate — only rootfs assembly runs (fast). |
+| **GHCR push** | Loads the `ratos-dev-image.docker-archive.gz` and pushes `ghcr.io/<owner>/ratos-dev-image:latest` and `ghcr.io/<owner>/ratos-dev-image:<git-sha>`. |
 | **GitHub Release** | On version tags only — creates a release and attaches all artifacts from all successful matrix jobs. |
 | **Workflow artifact** | On non-tag events — uploads container-amd64 artifacts as `ratos-evl-artifacts` (7-day retention) for downstream CI. |
 
@@ -153,13 +199,21 @@ that runs on every push to `main`, on version tags (`v*`), and on manual trigger
 
 **container-amd64** (always present on successful build):
 
-| File | Description |
-|---|---|
-| `vmlinuz` | EVL kernel image |
-| `initrd.img` | initrd for QEMU boot |
-| `ratos-dev-image.docker-archive.gz` | Docker rootfs archive |
-| `ratos-dev-image-container-amd64.ext4.gz` | Raw ext4 rootfs (gzip) — used by `start-qemu.sh` and CI boot |
-| `ratos-dev-image-container-amd64.wic.gz` | QEMU-bootable wic disk image (gzip, with partition table) |
+| File | Layer | Description |
+|---|---|---|
+| `vmlinuz` | — | Alias → `ratos-dev-image` kernel (backward compat) |
+| `initrd.img` | — | Alias → `ratos-dev-image` initrd (backward compat) |
+| `ratos-dev-image-container-amd64-vmlinuz` | dev | Full dev-image EVL kernel |
+| `ratos-evl-image-container-amd64-vmlinuz` | 1 | EVL-only image kernel |
+| `ratos-corerat-image-container-amd64-vmlinuz` | 2 | CoreRaT image kernel |
+| `ratos-commrat-image-container-amd64-vmlinuz` | 3 | CommRaT image kernel |
+| `ratos-dev-image-container-amd64.ext4.gz` | dev | Full dev-image ext4 rootfs |
+| `ratos-evl-image-container-amd64.ext4.gz` | 1 | EVL-only ext4 rootfs |
+| `ratos-corerat-image-container-amd64.ext4.gz` | 2 | CoreRaT ext4 rootfs |
+| `ratos-commrat-image-container-amd64.ext4.gz` | 3 | CommRaT ext4 rootfs |
+| `ratos-dev-image.docker-archive.gz` | dev | Docker rootfs archive |
+
+(Each image also ships a matching `-initrd.img` and `.wic.gz`.)
 
 **container-amd64** (version tags only):
 
