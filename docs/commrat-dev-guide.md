@@ -1,13 +1,13 @@
-# CommRaT Developer Guide — QEMU + Cross-Compilation SDK
+# CommRaT Developer Guide
 
-This guide covers the recommended workflow for CommRaT developers who want
-to build for the RaTOS EVL target: **compile on the host** using the
-cross-compilation SDK, and **run/test inside QEMU**.
+> **This document has been superseded.**
+> See [ratos-dev-guide.md](ratos-dev-guide.md) for the combined CoreRaT and CommRaT
+> developer guide covering image selection, QEMU boot, SDK setup, cross-compilation,
+> and iterative deployment.
+>
+> **Short version:** boot `ratos-corerat-image` (layer 2), which has EVL + CoreRaT
+> pre-installed but no CommRaT — then build and deploy CommRaT into it.
 
-> **Correct runtime image for CommRaT development: `ratos-corerat-image` (layer 2)**
-> This image has EVL + CoreRaT pre-installed but **no** CommRaT — so your local
-> build is the only CommRaT present.  Do not use `ratos-dev-image` for development;
-> it has a released CommRaT pre-installed which shadows your build.
 
 ## What changed recently
 

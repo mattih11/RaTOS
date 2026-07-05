@@ -108,9 +108,9 @@ qemu-system-x86_64 \
   -nographic
 ```
 
-See [docs/commrat-dev-guide.md](docs/commrat-dev-guide.md) for the full CommRaT
-developer workflow.  For CoreRaT or CommRaT development, use the matching
-layered image — see [docs/layered-development-guide.md](docs/layered-development-guide.md).
+See [docs/ratos-dev-guide.md](docs/ratos-dev-guide.md) for the combined CoreRaT /
+CommRaT developer workflow.  For the layered image model and how to choose the
+right image, see [docs/layered-development-guide.md](docs/layered-development-guide.md).
 
 ```bash
 dd if=build/tmp/deploy/images/<board>/ratos-image-ratos-<board>.wic \
