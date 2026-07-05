@@ -1,0 +1,16 @@
+#
+# RaTOS Real-Time OS — CommRaT target fragment
+#
+# Selects the ratos-commrat-image build target (layer 3).
+# Compose with a board fragment:
+#
+#   kas-container --isar build kas.yaml:kas/board/container-amd64.yaml:kas/target/commrat.yaml
+#   kas-container --isar build kas.yaml:kas/board/odroid-h4.yaml:kas/target/commrat.yaml
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+header:
+  version: 14
+
+target: ratos-commrat-image
