@@ -11,8 +11,8 @@ LICENSE = "GPL-2.0-or-later"
 
 SRC_URI = "git://github.com/mattih11/SeRTial.git;protocol=https;branch=main \
            file://debian/"
-SRCREV = "${AUTOREV}"
-PV = "2.0.0+git${SRCPV}"
+SRCREV = "3eb279ad34619e6b79a434dcbf32be421ed2a0b6"
+PV = "2.1.0+git${SRCPV}"
 S = "${WORKDIR}/git"
 
 inherit dpkg
