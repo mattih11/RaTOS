@@ -181,10 +181,9 @@ jobs:
             # Stage base library .deb packages built by ISAR so downstream STD
             # CI jobs (CoreRaT, CommRaT, RaTGUI) can install them on
             # bare ubuntu-latest without the ratos-dev-image container.
-            # ISAR deposits amd64 debs in tmp/deploy/deb/amd64/ and
-            # architecture-independent debs in tmp/deploy/deb/all/.
+            # ISAR deposits debs in isar-apt/<distro>-<arch>/apt/<distro>/pool/
             for pkg in libreflect-cpp-dev; do
-              find build/tmp/deploy/deb -name "${pkg}_*_*.deb" \
+              find build/tmp/deploy/isar-apt -name "${pkg}_*.deb" \
                 -exec cp {} . \; 2>/dev/null || true
             done
           fi
