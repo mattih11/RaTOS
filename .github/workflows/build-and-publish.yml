@@ -11,21 +11,28 @@
 #   initrd.img                                        Initrd     (alias → ratos-dev-image, backward compat)
 #   ratos-dev-image-container-amd64-vmlinuz           ratos-dev-image kernel
 #   ratos-dev-image-container-amd64-initrd.img        ratos-dev-image initrd
-#   ratos-evl-image-container-amd64-vmlinuz           ratos-evl-image kernel    (layer 1)
-#   ratos-evl-image-container-amd64-initrd.img        ratos-evl-image initrd    (layer 1)
-#   ratos-corerat-image-container-amd64-vmlinuz       ratos-corerat-image kernel (layer 2)
-#   ratos-corerat-image-container-amd64-initrd.img    ratos-corerat-image initrd (layer 2)
-#   ratos-commrat-image-container-amd64-vmlinuz       ratos-commrat-image kernel (layer 3)
-#   ratos-commrat-image-container-amd64-initrd.img    ratos-commrat-image initrd (layer 3)
+#   ratos-evl-image-container-amd64-vmlinuz           ratos-evl-image kernel     (layer 0)
+#   ratos-evl-image-container-amd64-initrd.img        ratos-evl-image initrd     (layer 0)
+#   ratos-sertial-image-container-amd64-vmlinuz       ratos-sertial-image kernel  (layer 1)
+#   ratos-sertial-image-container-amd64-initrd.img    ratos-sertial-image initrd  (layer 1)
+#   ratos-commrat-image-container-amd64-vmlinuz       ratos-commrat-image kernel  (layer 2)
+#   ratos-commrat-image-container-amd64-initrd.img    ratos-commrat-image initrd  (layer 2)
+#   ratos-ratgui-image-container-amd64-vmlinuz        ratos-ratgui-image kernel   (layer 3)
+#   ratos-ratgui-image-container-amd64-initrd.img     ratos-ratgui-image initrd   (layer 3)
 #   ratos-dev-image.docker-archive.gz                 Docker rootfs archive
 #   ratos-dev-image-container-amd64.ext4.gz           ratos-dev-image QEMU ext4 rootfs
-#   ratos-evl-image-container-amd64.ext4.gz           ratos-evl-image QEMU ext4 rootfs    (layer 1)
-#   ratos-corerat-image-container-amd64.ext4.gz       ratos-corerat-image QEMU ext4 rootfs (layer 2)
-#   ratos-commrat-image-container-amd64.ext4.gz       ratos-commrat-image QEMU ext4 rootfs (layer 3)
+#   ratos-evl-image-container-amd64.ext4.gz           ratos-evl-image QEMU ext4 rootfs     (layer 0)
+#   ratos-sertial-image-container-amd64.ext4.gz       ratos-sertial-image QEMU ext4 rootfs  (layer 1)
+#   ratos-commrat-image-container-amd64.ext4.gz       ratos-commrat-image QEMU ext4 rootfs  (layer 2)
+#   ratos-ratgui-image-container-amd64.ext4.gz        ratos-ratgui-image QEMU ext4 rootfs   (layer 3)
 #   ratos-dev-image-container-amd64.wic.gz            ratos-dev-image wic disk image
-#   ratos-evl-image-container-amd64.wic.gz            ratos-evl-image wic disk image    (layer 1)
-#   ratos-corerat-image-container-amd64.wic.gz        ratos-corerat-image wic disk image (layer 2)
-#   ratos-commrat-image-container-amd64.wic.gz        ratos-commrat-image wic disk image (layer 3)
+#   ratos-evl-image-container-amd64.wic.gz            ratos-evl-image wic disk image     (layer 0)
+#   ratos-sertial-image-container-amd64.wic.gz        ratos-sertial-image wic disk image  (layer 1)
+#   ratos-commrat-image-container-amd64.wic.gz        ratos-commrat-image wic disk image  (layer 2)
+#   ratos-ratgui-image-container-amd64.wic.gz         ratos-ratgui-image wic disk image   (layer 3)
+#   ratos-evl-image.docker-archive.gz                 ratos-evl-image Docker archive      (layer 0 SDK)
+#   ratos-sertial-image.docker-archive.gz             ratos-sertial-image Docker archive   (layer 1 SDK)
+#   ratos-commrat-image.docker-archive.gz             ratos-commrat-image Docker archive   (layer 2 SDK)
 #   ratos-image-odroid-h4.wic.gz                      Odroid H4 flash image (gzip)
 #   ratos-dev-sdk-container-amd64.*                   Cross-compilation SDK installer (version tags only)
 #
@@ -86,17 +93,21 @@ jobs:
       # Build layered development images (layer 1-3) for container-amd64.
       # These reuse the sstate populated by the full dev-image build above,
       # so only image assembly tasks run — kernel and package builds are cached.
-      - name: Build ratos-evl-image (layer 1)
+      - name: Build ratos-evl-image (layer 0)
         if: matrix.machine == 'container-amd64'
         run: kas-container --isar build kas.yaml:kas/board/container-amd64.yaml:kas/target/evl.yaml
 
-      - name: Build ratos-corerat-image (layer 2)
+      - name: Build ratos-sertial-image (layer 1)
         if: matrix.machine == 'container-amd64'
-        run: kas-container --isar build kas.yaml:kas/board/container-amd64.yaml:kas/target/corerat.yaml
+        run: kas-container --isar build kas.yaml:kas/board/container-amd64.yaml:kas/target/sertial.yaml
 
-      - name: Build ratos-commrat-image (layer 3)
+      - name: Build ratos-commrat-image (layer 2)
         if: matrix.machine == 'container-amd64'
         run: kas-container --isar build kas.yaml:kas/board/container-amd64.yaml:kas/target/commrat.yaml
+
+      - name: Build ratos-ratgui-image (layer 3)
+        if: matrix.machine == 'container-amd64'
+        run: kas-container --isar build kas.yaml:kas/board/container-amd64.yaml:kas/target/ratgui.yaml
 
       # Build the cross-compilation SDK (tags only — reuses sstate from the
       # main build above so only the SDK-specific packaging tasks run).
@@ -151,9 +162,12 @@ jobs:
               gzip -c "$f" > "$clean"
             done
 
-            # Docker archive (ratos-dev-image specific).
-            DOCKER="${DEPLOY}/ratos-dev-image-ratos-amd64.docker-archive.gz"
-            [ -f "${DOCKER}" ] && cp "${DOCKER}" ratos-dev-image.docker-archive.gz
+            # Docker archives — all image variants (used as SDK base images by downstream CI).
+            for f in "${DEPLOY}"/*.docker-archive.gz; do
+              [ -f "$f" ] || continue
+              clean=$(basename "$f" | sed 's/-ratos-amd64\.docker-archive\.gz$/.docker-archive.gz/')
+              cp "$f" "$clean"
+            done
 
             # SDK installer — present only when the Build SDK step ran.
             SDK_SRC=$(find build/tmp/deploy -name '*sdk*' \
@@ -162,6 +176,16 @@ jobs:
               SDK_EXT="${SDK_SRC##*.}"
               cp "${SDK_SRC}" "ratos-dev-sdk-container-amd64.${SDK_EXT}"
             fi
+
+            # Stage base library .deb packages built by ISAR so downstream STD
+            # CI jobs (CoreRaT, CommRaT, RaTGUI) can install them on
+            # bare ubuntu-latest without the ratos-dev-image container.
+            # ISAR deposits amd64 debs in tmp/deploy/deb/amd64/ and
+            # architecture-independent debs in tmp/deploy/deb/all/.
+            for pkg in reflectcpp; do
+              find build/tmp/deploy/deb -name "${pkg}_*_*.deb" \
+                -exec cp {} . \; 2>/dev/null || true
+            done
           fi
 
       - name: Upload build artifacts
@@ -173,10 +197,11 @@ jobs:
             initrd.img
             *-vmlinuz
             *-initrd.img
-            ratos-dev-image.docker-archive.gz
+            *.docker-archive.gz
             *.ext4.gz
             *.wic.gz
             ratos-dev-sdk-container-amd64.*
+            reflectcpp_*.deb
           if-no-files-found: ignore
           retention-days: 7
 
@@ -220,27 +245,34 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Push Docker image to GHCR
+      - name: Push SDK images to GHCR
         run: |
-          DOCKER_ARCHIVE="artifacts/container-amd64/ratos-dev-image.docker-archive.gz"
-          if [ ! -f "${DOCKER_ARCHIVE}" ]; then
-            echo "Docker archive not found (container-amd64 build did not succeed), skipping."
-            exit 0
-          fi
-
-          IMAGE_REPO="ghcr.io/${{ github.repository_owner }}/ratos-dev-image"
           GIT_SHA="${{ github.sha }}"
 
+          # Push a docker archive as a GHCR image.
           # docker load prints either:
           #   "Loaded image: <name>:<tag>"   (archive has a tag)
           #   "Loaded image ID: sha256:..."  (archive has no tag)
-          LOADED=$(docker load < "${DOCKER_ARCHIVE}" \
-            | grep "Loaded image" | tail -1 | sed 's/.*: //')
+          push_image() {
+            local archive="artifacts/container-amd64/$1.docker-archive.gz"
+            local repo="ghcr.io/${{ github.repository_owner }}/$2"
+            if [ ! -f "${archive}" ]; then
+              echo "Archive ${archive} not found, skipping."
+              return
+            fi
+            LOADED=$(docker load < "${archive}" | grep "Loaded image" | tail -1 | sed 's/.*: //')
+            docker tag "${LOADED}" "${repo}:latest"
+            docker tag "${LOADED}" "${repo}:${GIT_SHA}"
+            docker push "${repo}:latest"
+            docker push "${repo}:${GIT_SHA}"
+          }
 
-          docker tag "${LOADED}" "${IMAGE_REPO}:latest"
-          docker tag "${LOADED}" "${IMAGE_REPO}:${GIT_SHA}"
-          docker push "${IMAGE_REPO}:latest"
-          docker push "${IMAGE_REPO}:${GIT_SHA}"
+          # Layer SDK images — used as build environments by downstream project CIs.
+          push_image "ratos-evl-image"     "ratos-evl-sdk"
+          push_image "ratos-sertial-image" "ratos-sertial-sdk"
+          push_image "ratos-commrat-image" "ratos-commrat-sdk"
+          # Dev image — full stack + toolchain (existing behaviour, kept for compatibility).
+          push_image "ratos-dev-image"     "ratos-dev-image"
 
       # On version tags: create a GitHub Release and attach all built artifacts.
       - name: Create GitHub Release
