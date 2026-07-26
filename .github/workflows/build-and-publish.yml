@@ -35,6 +35,7 @@
 #   ratos-commrat-image.docker-archive.gz             ratos-commrat-image Docker archive   (layer 2 SDK)
 #   ratos-image-odroid-h4.wic.gz                      Odroid H4 flash image (gzip)
 #   ratos-dev-sdk-container-amd64.*                   Cross-compilation SDK installer (version tags only)
+#   libreflect-cpp-dev_*.deb                          reflect-cpp header-only deb (for downstream STD CI)
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
@@ -182,7 +183,7 @@ jobs:
             # bare ubuntu-latest without the ratos-dev-image container.
             # ISAR deposits amd64 debs in tmp/deploy/deb/amd64/ and
             # architecture-independent debs in tmp/deploy/deb/all/.
-            for pkg in reflectcpp; do
+            for pkg in libreflect-cpp-dev; do
               find build/tmp/deploy/deb -name "${pkg}_*_*.deb" \
                 -exec cp {} . \; 2>/dev/null || true
             done
@@ -201,7 +202,7 @@ jobs:
             *.ext4.gz
             *.wic.gz
             ratos-dev-sdk-container-amd64.*
-            reflectcpp_*.deb
+            libreflect-cpp-dev_*.deb
           if-no-files-found: ignore
           retention-days: 7
 
