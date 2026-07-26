@@ -5,7 +5,7 @@
 > developer guide covering image selection, QEMU boot, SDK setup, cross-compilation,
 > and iterative deployment.
 >
-> **Short version:** boot `ratos-corerat-image` (layer 2), which has EVL + CoreRaT
+> **Short version:** boot `ratos-sertial-image` (layer 1), which has EVL + SeRTial + CoreRaT
 > pre-installed but no CommRaT — then build and deploy CommRaT into it.
 
 
@@ -13,7 +13,7 @@
 
 | Commit | Change |
 |---|---|
-| `a966bcd` | Layered images introduced. CommRaT development now targets `ratos-corerat-image` (layer 2) instead of `ratos-dev-image`. New CI artifacts: `ratos-corerat-image-container-amd64.ext4.gz`, `ratos-corerat-image-container-amd64-vmlinuz`, `ratos-corerat-image-container-amd64-initrd.img`. |
+| `a966bcd` | Layered images introduced. CommRaT development now targets `ratos-sertial-image` (layer 1) instead of `ratos-dev-image`. New CI artifacts: `ratos-sertial-image-container-amd64.ext4.gz`, `ratos-sertial-image-container-amd64-vmlinuz`, `ratos-sertial-image-container-amd64-initrd.img`. |
 | `a198ab5` | QEMU boot switched to raw `ext4` + `-device ide-hd` (aligns with upstream xenomai-images). `scripts/start-qemu.sh` updated accordingly. |
 | `a198ab5` | `IMAGE_FSTYPES` for `container-amd64` is now `docker-archive.gz ext4 wic.gz`. The `ext4` file is used by `start-qemu.sh`; the `wic.gz` is the CI release artifact. |
 | post-`a198ab5` | Console hang fixed: `console=ttyS0` only (no `console=tty0`). With dual `console=` the last entry becomes `/dev/console`; with `tty0` last, systemd sent all output to VGA (invisible under `-nographic`). Single `console=ttyS0` lets `systemd-getty-generator` auto-start `serial-getty@ttyS0`. Also switched to `-cpu host -enable-kvm` (matching upstream). `CONFIG_SATA_AHCI=y` — AHCI is built-in, no initramfs changes needed. |
@@ -29,13 +29,13 @@
 **1. Build the image**
 
 ```sh
-kas-container --isar build kas.yaml:kas/board/container-amd64.yaml:kas/target/corerat.yaml
+kas-container --isar build kas.yaml:kas/board/container-amd64.yaml:kas/target/sertial.yaml
 ```
 
 Produces under `build/tmp/deploy/images/container-amd64/`:
-- `ratos-corerat-image-ratos-container-amd64.ext4` — rootfs for QEMU
-- `ratos-corerat-image-ratos-container-amd64-vmlinuz` — EVL kernel
-- `ratos-corerat-image-ratos-container-amd64-initrd.img` — initrd
+- `ratos-sertial-image-ratos-container-amd64.ext4` — rootfs for QEMU
+- `ratos-sertial-image-ratos-container-amd64-vmlinuz` — EVL kernel
+- `ratos-sertial-image-ratos-container-amd64-initrd.img` — initrd
 
 **2. Build the cross-compilation SDK**
 
@@ -83,9 +83,9 @@ ACCEL=tcg; [ -w /dev/kvm ] && ACCEL=kvm
 qemu-system-x86_64 \
   -cpu qemu64 -smp 4 -m 2G \
   -machine q35,accel=${ACCEL} \
-  -kernel  ${DEPLOY}/ratos-corerat-image-ratos-container-amd64-vmlinuz \
-  -initrd  ${DEPLOY}/ratos-corerat-image-ratos-container-amd64-initrd.img \
-  -drive   file=${DEPLOY}/ratos-corerat-image-ratos-container-amd64.ext4,discard=unmap,if=none,id=disk,format=raw \
+  -kernel  ${DEPLOY}/ratos-sertial-image-ratos-container-amd64-vmlinuz \
+  -initrd  ${DEPLOY}/ratos-sertial-image-ratos-container-amd64-initrd.img \
+  -drive   file=${DEPLOY}/ratos-sertial-image-ratos-container-amd64.ext4,discard=unmap,if=none,id=disk,format=raw \
   -device  ide-hd,drive=disk \
   -append  "root=/dev/sda rw rootwait console=ttyS0" \
   -serial  mon:stdio \
@@ -120,9 +120,9 @@ Download artifacts from a GitHub release or from the
 
 **Files you need (available on every successful build — `ratos-evl-artifacts` or any release):**
 ```
-ratos-corerat-image-container-amd64-vmlinuz
-ratos-corerat-image-container-amd64-initrd.img
-ratos-corerat-image-container-amd64.ext4.gz    ← raw ext4 rootfs
+ratos-sertial-image-container-amd64-vmlinuz
+ratos-sertial-image-container-amd64-initrd.img
+ratos-sertial-image-container-amd64.ext4.gz    ← raw ext4 rootfs
 ```
 
 **SDK (version-tag GitHub Releases only — not in `ratos-evl-artifacts`):**
@@ -134,16 +134,16 @@ ratos-dev-sdk-container-amd64.*            ← cross-compilation SDK installer
 
 ```sh
 # Decompress the ext4 rootfs
-gunzip -k ratos-corerat-image-container-amd64.ext4.gz
+gunzip -k ratos-sertial-image-container-amd64.ext4.gz
 
 # Boot (KVM if available)
 ACCEL=tcg; [ -w /dev/kvm ] && ACCEL=kvm
 qemu-system-x86_64 \
   -cpu qemu64 -smp 4 -m 2G \
   -machine q35,accel=${ACCEL} \
-  -kernel ratos-corerat-image-container-amd64-vmlinuz \
-  -initrd ratos-corerat-image-container-amd64-initrd.img \
-  -drive file=ratos-corerat-image-container-amd64.ext4,discard=unmap,if=none,id=disk,format=raw \
+  -kernel ratos-sertial-image-container-amd64-vmlinuz \
+  -initrd ratos-sertial-image-container-amd64-initrd.img \
+  -drive file=ratos-sertial-image-container-amd64.ext4,discard=unmap,if=none,id=disk,format=raw \
   -device ide-hd,drive=disk \
   -append "root=/dev/sda rw rootwait console=ttyS0" \
   -serial mon:stdio \

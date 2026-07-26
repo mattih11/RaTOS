@@ -18,11 +18,11 @@ inherit image
 ISAR_RELEASE_CMD = "git -C ${LAYERDIR_ratos} describe --tags \
     --dirty --always --match 'v[0-9].[0-9]*'"
 
-DESCRIPTION = "RaTOS EVL base image — EVL kernel + libevl (layer 1, for CoreRaT development)"
+DESCRIPTION = "RaTOS EVL base image — EVL kernel + libevl + reflect-cpp (layer 0)"
 HOSTNAME = "ratos-evl"
 
-# Ensure EVL kernel and libevl are in isar-apt before do_rootfs_install runs.
-DEPENDS = "linux-xenomai-4 libevl sshd-regen-keys expand-on-first-boot"
+# Ensure all base packages are in isar-apt before do_rootfs_install runs.
+DEPENDS = "linux-xenomai-4 libevl reflect-cpp sshd-regen-keys expand-on-first-boot"
 
 IMAGE_PREINSTALL += " \
     bash-completion vim \
@@ -30,9 +30,10 @@ IMAGE_PREINSTALL += " \
     dbus"
 
 # libevl: EVL user-space library and headers
+# libreflect-cpp-dev: header-only C++20 reflection (needed by everything above)
 # sshd-regen-keys: regenerate SSH host keys on first boot (pulls openssh-server)
 # expand-on-first-boot: grow the root partition to full medium on first boot
-IMAGE_INSTALL += "libevl sshd-regen-keys expand-on-first-boot"
+IMAGE_INSTALL += "libevl libreflect-cpp-dev sshd-regen-keys expand-on-first-boot"
 
 # Pull in the full Xenomai 4 / EVL test suite from upstream
 IMAGE_INSTALL:append:xenomai4 = " libevl-test"

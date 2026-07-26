@@ -47,9 +47,10 @@ is self-contained and lists only the packages it needs.
 ```
 recipes-core/images/
   ratos-container-qemu-setup.inc   # shared: hostname / networkd / sshd setup
-  ratos-evl-image.bb               # layer 1: EVL kernel + libevl
-  ratos-corerat-image.bb           # layer 2: layer 1 + CoreRaT
-  ratos-commrat-image.bb           # layer 3: layer 2 + CommRaT
+  ratos-evl-image.bb               # layer 0: EVL kernel + libevl + reflect-cpp
+  ratos-sertial-image.bb           # layer 1: layer 0 + SeRTial + CoreRaT
+  ratos-commrat-image.bb           # layer 2: layer 1 + CommRaT
+  ratos-ratgui-image.bb            # layer 3: layer 2 + RatGUI
   ratos-image.bb                   # layer 4: full production image (unchanged)
   ratos-dev-image.bb               # dev container with build toolchain (unchanged)
 ```
@@ -80,27 +81,31 @@ fragment.  The board sets the machine; the target fragment sets the image.
 ```
 kas/target/
   evl.yaml      # target: ratos-evl-image
-  corerat.yaml  # target: ratos-corerat-image
+  sertial.yaml  # target: ratos-sertial-image
   commrat.yaml  # target: ratos-commrat-image
+  ratgui.yaml   # target: ratos-ratgui-image
 ```
 
 ### Build commands
 
 ```sh
-# Layer 1: EVL base — QEMU (for CoreRaT development)
+# Layer 0: EVL base — QEMU (for SeRTial development)
 kas-container --isar build kas.yaml:kas/board/container-amd64.yaml:kas/target/evl.yaml
 
-# Layer 2: EVL + CoreRaT — QEMU (for CommRaT development)
-kas-container --isar build kas.yaml:kas/board/container-amd64.yaml:kas/target/corerat.yaml
+# Layer 1: EVL + SeRTial + CoreRaT — QEMU (for CommRaT development)
+kas-container --isar build kas.yaml:kas/board/container-amd64.yaml:kas/target/sertial.yaml
 
-# Layer 3: EVL + CoreRaT + CommRaT — QEMU (for app development)
+# Layer 2: EVL + SeRTial + CoreRaT + CommRaT — QEMU (for app development)
 kas-container --isar build kas.yaml:kas/board/container-amd64.yaml:kas/target/commrat.yaml
+
+# Layer 3: full RT stack + RatGUI — QEMU
+kas-container --isar build kas.yaml:kas/board/container-amd64.yaml:kas/target/ratgui.yaml
 
 # Layer 4: full image — QEMU dev container (unchanged)
 kas-container --isar build kas.yaml:kas/board/container-amd64.yaml
 
 # Any layer on Odroid H4 hardware
-kas-container --isar build kas.yaml:kas/board/odroid-h4.yaml:kas/target/corerat.yaml
+kas-container --isar build kas.yaml:kas/board/odroid-h4.yaml:kas/target/sertial.yaml
 ```
 
 A defines *what* gets built; B provides the convenient CLI selection of *which*
@@ -129,7 +134,7 @@ meta-ratos-base/          (this repo, minus app-specific recipes)
 meta-ratos-corerat/       (separate git repo, possibly in the CoreRaT project)
   conf/layer.conf
   recipes-corerat/        corerat_git.bb
-  recipes-core/images/    ratos-corerat-image.bb
+  recipes-core/images/    ratos-sertial-image.bb
 
 meta-ratos-commrat/       (separate git repo, possibly in the CommRaT project)
   conf/layer.conf
@@ -178,7 +183,7 @@ repos:
 
 ```sh
 kas-container --isar build \
-  kas.yaml:kas/board/container-amd64.yaml:kas/target/corerat.yaml:kas/local/corerat-local.yaml
+  kas.yaml:kas/board/container-amd64.yaml:kas/target/sertial.yaml:kas/local/corerat-local.yaml
 ```
 
 ---
@@ -188,7 +193,7 @@ kas-container --isar build \
 | Situation | Approach |
 |---|---|
 | Small team, monorepo, want faster test builds now | **A + B** (image recipes + KAS fragments) |
-| CoreRaT / CommRaT have independent versioning or are in separate repos | **C** (separate metadata layers) + KAS `repos:` pinning |
+| SeRTial / CommRaT / RatGUI have independent versioning or are in separate repos | **C** (separate metadata layers) + KAS `repos:` pinning |
 | Both of the above | **A + B + C** — they compose cleanly |
 
 ### Key point
@@ -216,7 +221,8 @@ affect another layer's build.
 
 | Build level | Image recipe | What gets compiled | Typical user |
 |---|---|---|---|
-| 1 — EVL base | `ratos-evl-image` | EVL kernel, libevl, sertial, reflect-cpp | CoreRaT developer, EVL bringup |
-| 2 — CoreRaT | `ratos-corerat-image` | Level 1 + CoreRaT | CommRaT developer |
-| 3 — CommRaT | `ratos-commrat-image` | Level 2 + CommRaT | App developer / integration |
+| 0 — EVL base | `ratos-evl-image` | EVL kernel, libevl, reflect-cpp | SeRTial developer, EVL bringup |
+| 1 — SeRTial | `ratos-sertial-image` | Level 0 + SeRTial + CoreRaT | CommRaT developer |
+| 2 — CommRaT | `ratos-commrat-image` | Level 1 + CommRaT | App developer / integration |
+| 3 — RatGUI | `ratos-ratgui-image` | Level 2 + RatGUI | UI developer |
 | 4 — Full | `ratos-image` | Level 3 + end-user apps | QA, release, production |

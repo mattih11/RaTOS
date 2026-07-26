@@ -1,14 +1,14 @@
 #
-# RaTOS Real-Time OS — CoreRaT image (layer 2)
+# RaTOS Real-Time OS — SeRTial image (layer 1)
 #
-# EVL base image + CoreRaT platform library.
-# Use this as the target when developing or testing CommRaT against CoreRaT.
+# EVL base image + SeRTial serialization stack + CoreRaT platform library.
+# Use this as the target when developing or testing CommRaT.
 #
 # Build (QEMU):
-#   kas-container --isar build kas.yaml:kas/board/container-amd64.yaml:kas/target/corerat.yaml
+#   kas-container --isar build kas.yaml:kas/board/container-amd64.yaml:kas/target/sertial.yaml
 #
 # Build (Odroid H4):
-#   kas-container --isar build kas.yaml:kas/board/odroid-h4.yaml:kas/target/corerat.yaml
+#   kas-container --isar build kas.yaml:kas/board/odroid-h4.yaml:kas/target/sertial.yaml
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
@@ -18,8 +18,8 @@ inherit image
 ISAR_RELEASE_CMD = "git -C ${LAYERDIR_ratos} describe --tags \
     --dirty --always --match 'v[0-9].[0-9]*'"
 
-DESCRIPTION = "RaTOS CoreRaT image — EVL + CoreRaT (layer 2, for CommRaT development)"
-HOSTNAME = "ratos-corerat"
+DESCRIPTION = "RaTOS SeRTial image — EVL + SeRTial + CoreRaT (layer 1, for CommRaT development)"
+HOSTNAME = "ratos-sertial"
 
 # Ensure all required packages are in isar-apt before do_rootfs_install runs.
 DEPENDS = "linux-xenomai-4 libevl reflect-cpp sertial corerat \

@@ -14,9 +14,10 @@ version present in the VM.
 
 | You are developing | Boot this image | Layer | Pre-installed | Not installed |
 |---|---|---|---|---|
-| **CoreRaT** | `ratos-evl-image` | 1 | EVL kernel, libevl | CoreRaT, CommRaT |
-| **CommRaT** | `ratos-corerat-image` | 2 | Layer 1 + CoreRaT | CommRaT |
-| Applications on CommRaT | `ratos-commrat-image` | 3 | Layer 2 + CommRaT | your app |
+| **SeRTial** | `ratos-evl-image` | 0 | EVL kernel, libevl, reflect-cpp | SeRTial, CoreRaT, CommRaT |
+| **CoreRaT** | `ratos-evl-image` | 0 | EVL kernel, libevl, reflect-cpp | CoreRaT, CommRaT |
+| **CommRaT** | `ratos-sertial-image` | 1 | Layer 0 + SeRTial + CoreRaT | CommRaT |
+| Applications on CommRaT | `ratos-commrat-image` | 2 | Layer 1 + CommRaT | your app |
 
 Do **not** use `ratos-dev-image` for development — it has the full released
 stack pre-installed and will shadow your local build.
@@ -33,11 +34,11 @@ differ.  Read the table above, pick your row, then follow the steps below.
 #### Option A — Local build
 
 ```sh
-# CoreRaT developer
+# SeRTial / CoreRaT developer
 kas-container --isar build kas.yaml:kas/board/container-amd64.yaml:kas/target/evl.yaml
 
 # CommRaT developer
-kas-container --isar build kas.yaml:kas/board/container-amd64.yaml:kas/target/corerat.yaml
+kas-container --isar build kas.yaml:kas/board/container-amd64.yaml:kas/target/sertial.yaml
 ```
 
 Output lands in `build/tmp/deploy/images/container-amd64/`.
@@ -50,8 +51,8 @@ Download from the latest `ratos-evl-artifacts` workflow artifact on the
 
 | Component | Files to download |
 |---|---|
-| CoreRaT | `ratos-evl-image-container-amd64-vmlinuz`, `ratos-evl-image-container-amd64-initrd.img`, `ratos-evl-image-container-amd64.ext4.gz` |
-| CommRaT | `ratos-corerat-image-container-amd64-vmlinuz`, `ratos-corerat-image-container-amd64-initrd.img`, `ratos-corerat-image-container-amd64.ext4.gz` |
+| SeRTial / CoreRaT | `ratos-evl-image-container-amd64-vmlinuz`, `ratos-evl-image-container-amd64-initrd.img`, `ratos-evl-image-container-amd64.ext4.gz` |
+| CommRaT | `ratos-sertial-image-container-amd64-vmlinuz`, `ratos-sertial-image-container-amd64-initrd.img`, `ratos-sertial-image-container-amd64.ext4.gz` |
 
 ```sh
 # Decompress whichever ext4 you downloaded
@@ -62,13 +63,13 @@ gunzip -k ratos-<image>-container-amd64.ext4.gz
 
 ### Step 2 — Boot QEMU
 
-Replace `<image>` with `ratos-evl-image` (CoreRaT) or `ratos-corerat-image`
+Replace `<image>` with `ratos-evl-image` (SeRTial/CoreRaT) or `ratos-sertial-image`
 (CommRaT).
 
 **From a local build:**
 ```sh
 DEPLOY=build/tmp/deploy/images/container-amd64
-IMAGE=<image>   # e.g. ratos-evl-image  or  ratos-corerat-image
+IMAGE=<image>   # e.g. ratos-evl-image  or  ratos-sertial-image
 ACCEL=tcg; [ -w /dev/kvm ] && ACCEL=kvm
 
 qemu-system-x86_64 \
@@ -87,7 +88,7 @@ qemu-system-x86_64 \
 
 **From CI artifacts** (after `gunzip`):
 ```sh
-IMAGE=<image>   # e.g. ratos-evl-image  or  ratos-corerat-image
+IMAGE=<image>   # e.g. ratos-evl-image  or  ratos-sertial-image
 ACCEL=tcg; [ -w /dev/kvm ] && ACCEL=kvm
 
 qemu-system-x86_64 \
@@ -183,8 +184,8 @@ ssh root@localhost -p 22222
 
 #### CommRaT
 
-CoreRaT must already be running in the VM (it is pre-installed in
-`ratos-corerat-image` as a Debian package):
+CoreRaT and SeRTial must already be running in the VM (they are pre-installed in
+`ratos-sertial-image` as Debian packages):
 
 ```sh
 # Ensure the CoreRaT router is running (it may already be via systemd)
@@ -251,7 +252,7 @@ so binaries built with the SDK run unmodified inside the VM.
 
 | Commit | Change |
 |---|---|
-| `a966bcd` | Layered images introduced (`ratos-evl-image`, `ratos-corerat-image`, `ratos-commrat-image`). This guide replaces `commrat-dev-guide.md`. |
+| `a966bcd` | Layered images introduced (`ratos-evl-image`, `ratos-sertial-image`, `ratos-commrat-image`). This guide replaces `commrat-dev-guide.md`. |
 | `a198ab5` | QEMU boot switched to raw `ext4` + `-device ide-hd`. |
 | `574f4f9` | SDK build step added to CI; SDK published on release tags. |
 | (recent) | `PubkeyAuthentication yes` enabled in dev images; root key-based SSH now works without password fallback. |

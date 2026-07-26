@@ -1,0 +1,16 @@
+#
+# RaTOS Real-Time OS — RatGUI target fragment
+#
+# Selects the ratos-ratgui-image build target (layer 3).
+# Compose with a board fragment:
+#
+#   kas-container --isar build kas.yaml:kas/board/container-amd64.yaml:kas/target/ratgui.yaml
+#   kas-container --isar build kas.yaml:kas/board/odroid-h4.yaml:kas/target/ratgui.yaml
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+header:
+  version: 14
+
+target: ratos-ratgui-image

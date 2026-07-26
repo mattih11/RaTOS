@@ -1,0 +1,84 @@
+#
+# RaTOS Real-Time OS — SRCREV bump workflow
+#
+# Triggered by downstream project CIs (SeRTial, CommRaT, ...) via
+# workflow_dispatch after a successful merge to main.  Creates a PR that
+# updates the SRCREV in the relevant BitBake recipe file.
+#
+# Caller example (from SeRTial CI, after main merge):
+#   gh workflow run srcrev-bump.yml \
+#     --repo <org>/RaTOS \
+#     --field component=sertial \
+#     --field recipe_file=recipes-sertial/sertial/sertial_git.bb \
+#     --field new_srcrev=${{ github.sha }}
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+name: Bump SRCREV
+
+on:
+  workflow_dispatch:
+    inputs:
+      component:
+        description: 'Component name used in branch / commit message (e.g. sertial, commrat)'
+        required: true
+        type: string
+      recipe_file:
+        description: 'Relative path to the recipe file containing the SRCREV (e.g. recipes-sertial/sertial/sertial_git.bb)'
+        required: true
+        type: string
+      new_srcrev:
+        description: 'Full 40-character git SHA to set as the new SRCREV'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  bump-srcrev:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.2.2
+
+      - name: Validate inputs
+        run: |
+          # Reject SRCREVs that are not exactly 40 hex characters to prevent
+          # injection of arbitrary shell content via the input field.
+          if ! [[ "${{ inputs.new_srcrev }}" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::new_srcrev must be a full 40-character lowercase git SHA."
+            exit 1
+          fi
+          if [ ! -f "${{ inputs.recipe_file }}" ]; then
+            echo "::error::Recipe file '${{ inputs.recipe_file }}' does not exist."
+            exit 1
+          fi
+
+      - name: Update SRCREV
+        run: |
+          OLD=$(grep '^SRCREV' "${{ inputs.recipe_file }}" | head -1 | sed 's/SRCREV = "\(.*\)"/\1/')
+          sed -i 's|^SRCREV = ".*"|SRCREV = "${{ inputs.new_srcrev }}"|' "${{ inputs.recipe_file }}"
+          echo "SRCREV updated: ${OLD} → ${{ inputs.new_srcrev }}"
+
+      - name: Open pull request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: srcrev-bump/${{ inputs.component }}/${{ inputs.new_srcrev }}
+          commit-message: "chore(${{ inputs.component }}): bump SRCREV to ${{ inputs.new_srcrev }}"
+          title: "chore(${{ inputs.component }}): bump SRCREV to ${{ inputs.new_srcrev }}"
+          body: |
+            Automated SRCREV bump triggered by the **${{ inputs.component }}** CI pipeline.
+
+            | Field | Value |
+            |---|---|
+            | Recipe | `${{ inputs.recipe_file }}` |
+            | New SRCREV | `${{ inputs.new_srcrev }}` |
+
+            Once this PR is merged, the RaTOS CI will rebuild the affected layers
+            and publish updated SDK images to GHCR.
+          labels: "automated,srcrev-bump"
