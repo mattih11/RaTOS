@@ -9,7 +9,7 @@ DESCRIPTION = "reflect-cpp: compile-time C++20 reflection for serialization and 
 MAINTAINER = "Matthias Haase"
 LICENSE = "MIT"
 
-SRC_URI = "git://github.com/getml/reflect-cpp.git;protocol=https;branch=main \
+SRC_URI = "git://github.com/mattih11/reflect-cpp.git;protocol=https;branch=main \
            file://debian/"
 SRCREV = "${AUTOREV}"
 PV = "0.0+git${SRCPV}"
