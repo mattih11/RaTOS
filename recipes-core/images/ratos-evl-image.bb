@@ -27,6 +27,7 @@ DEPENDS = "linux-xenomai-4 libevl reflect-cpp sshd-regen-keys expand-on-first-bo
 IMAGE_PREINSTALL += " \
     bash-completion vim \
     net-tools iputils-ping ssh \
+    rsync \
     dbus"
 
 # libevl: EVL user-space library and headers
