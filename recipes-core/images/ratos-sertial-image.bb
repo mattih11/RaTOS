@@ -28,6 +28,7 @@ DEPENDS = "linux-xenomai-4 libevl reflect-cpp sertial corerat \
 IMAGE_PREINSTALL += " \
     bash-completion vim \
     net-tools iputils-ping ssh \
+    rsync cmake \
     dbus"
 
 # libevl: EVL user-space library and headers

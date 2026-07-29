@@ -27,6 +27,7 @@ DEPENDS = "linux-xenomai-4 libevl reflect-cpp sertial corerat commrat \
 IMAGE_PREINSTALL += " \
     bash-completion vim \
     net-tools iputils-ping ssh \
+    rsync cmake \
     dbus"
 
 IMAGE_INSTALL += " \
