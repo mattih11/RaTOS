@@ -3,6 +3,10 @@
 %:
 	dh $@ --buildsystem=cmake
 
+override_dh_installsystemd:
+	dh_installsystemd
+	dh_installsystemd --name=corerat-router-evl
+
 override_dh_auto_configure:
 	dh_auto_configure -- \
 	    -DCORERAT_BUILD_TESTS=OFF \

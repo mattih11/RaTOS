@@ -1,12 +1,12 @@
 [Unit]
-Description=CoreRaT TCP Router
+Description=CoreRaT EVL Name-Service Router
 Documentation=https://github.com/ratos-project/corerat
-After=network.target
-Wants=network.target
+After=local-fs.target
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/corerat-router-tcp
+RuntimeDirectory=corerat
+ExecStart=/usr/bin/corerat-router-evl
 Restart=on-failure
 RestartSec=5s
 

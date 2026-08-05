@@ -21,5 +21,7 @@ Description: CoreRaT - C++20 real-time platform abstraction (dev headers + stati
 Package: corerat-tools
 Architecture: any
 Depends: ${misc:Depends}, ${shlibs:Depends}, systemd
-Description: CoreRaT tools (corerat-router-evl)
- EVL-platform router for use with CommRaT and CoreRaT-based applications.
+Description: CoreRaT router daemons
+ corerat-router-tcp: RACK/TiMS-compatible TCP router (STD platform and RACK
+  compatibility). corerat-router-evl: Unix-socket name-service daemon for
+  cross-process EVL SHM mailboxes (EVL platform, cross_process=true).
