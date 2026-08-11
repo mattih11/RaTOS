@@ -11,7 +11,7 @@ LICENSE = "GPL-2.0-or-later"
 
 SRC_URI = "git://github.com/mattih11/SeRTial.git;protocol=https;branch=main \
            file://debian/"
-SRCREV = "cd77ffebc4eec9e0db5ff591b1ec71b3e1119d1c"
+SRCREV = "9b1388c1f19d82ee8bc031d1bf970da81bd6d36c"
 PV = "2.1.0+git${SRCPV}"
 S = "${WORKDIR}/git"
 
