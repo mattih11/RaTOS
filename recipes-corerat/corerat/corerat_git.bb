@@ -11,7 +11,7 @@ LICENSE = "GPL-2.0-or-later"
 
 SRC_URI = "git://github.com/mattih11/CoreRaT.git;protocol=https;branch=main \
            file://debian/"
-SRCREV = "f25928fd4277aac82fd8bffac922ee528edb6d07"
+SRCREV = "ef30f82969c857fd8f9975cbb0d61e83c56e908f"
 PV = "0.0+git${SRCPV}"
 S = "${WORKDIR}/git"
 
