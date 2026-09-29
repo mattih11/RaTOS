@@ -1,0 +1,47 @@
+Source: musicrat
+Section: sound
+Priority: optional
+Maintainer: Matthias Haase <mattihaase@proton.me>
+Build-Depends: debhelper-compat (= 13),
+               cmake (>= 3.20),
+               g++ (>= 10),
+               libcommrat-dev,
+               libcorerat-dev,
+               libsertial-dev,
+               libreflect-cpp-dev,
+               libevl,
+               libflac-dev,
+               libmpg123-dev,
+               libavformat-dev,
+               libavcodec-dev,
+               libavutil-dev,
+               libswresample-dev,
+               librubberband-dev,
+               libdrm-dev
+Standards-Version: 4.6.0
+
+Package: musicrat
+Architecture: any
+Depends: ${misc:Depends}, ${shlibs:Depends}
+Description: MusicRaT real-time audio modules and launcher
+ Provides the headless MusicRaT module binaries, module descriptors, and graph
+ launcher built against the RaTOS EVL communication stack.
+
+Package: libmusicrat-dev
+Section: libdevel
+Architecture: any
+Depends: ${misc:Depends},
+         libcommrat-dev,
+         libcorerat-dev,
+         libsertial-dev,
+         libreflect-cpp-dev
+Description: MusicRaT development headers and CMake package
+ Provides public headers, generated audio-policy configuration, the audio
+ device backend library, and exported CMake targets.
+
+Package: musicrat-examples
+Architecture: all
+Depends: ${misc:Depends}, musicrat (= ${binary:Version})
+Description: MusicRaT example application descriptions
+ Provides reusable CommRaT graph, LVGL layout, and Application Designer project
+ descriptions for MusicRaT.

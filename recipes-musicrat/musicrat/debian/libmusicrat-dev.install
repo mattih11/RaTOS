@@ -1,0 +1,3 @@
+usr/include/musicrat/*
+usr/lib/*/libmusicrat_audio_device_backend.a
+usr/lib/*/cmake/MusicRaT/*

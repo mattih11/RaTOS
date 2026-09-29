@@ -1,0 +1,13 @@
+#
+# RaTOS Real-Time OS - MusicRaT target fragment
+#
+# Compose with a board fragment, for example:
+#   kas-container --isar build kas.yaml:kas/board/container-amd64.yaml:kas/target/musicrat.yaml
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+header:
+  version: 14
+
+target: ratos-musicrat-image

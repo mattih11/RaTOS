@@ -30,6 +30,10 @@ DEPENDS += "sshd-regen-keys"
 # Dev toolchain from Debian Trixie
 IMAGE_PREINSTALL += " \
     build-essential cmake ninja-build pkg-config \
+    libflac-dev libmpg123-dev \
+    libavformat-dev libavcodec-dev libavutil-dev libswresample-dev \
+    librubberband-dev libdrm-dev \
+    nodejs npm \
     g++ gdb valgrind \
     git ca-certificates curl \
     python3 python3-pip \

@@ -1,0 +1,21 @@
+#!/usr/bin/make -f
+
+%:
+	dh $@ --buildsystem=cmake
+
+override_dh_auto_configure:
+	dh_auto_configure -- \
+	    -DBUILD_MUSICRAT=ON \
+	    -DBUILD_MUSICXML=OFF \
+	    -DBUILD_TESTING=OFF \
+	    -DMUSICRAT_AUDIO_BACKEND=NONE \
+	    -DMUSICRAT_FLAC_SUPPORT=ON \
+	    -DMUSICRAT_MP3_SUPPORT=ON \
+	    -DMUSICRAT_AAC_SUPPORT=ON \
+	    -DMUSICRAT_OPUS_SUPPORT=ON \
+	    -DMUSICRAT_RUBBERBAND_SUPPORT=ON \
+	    -DMUSICRAT_LVGL_SOURCE_DIR=$(CURDIR)/third_party/lvgl \
+	    -DMUSICRAT_LVGL_ENABLE_DRM=ON \
+	    -DMUSICRAT_LVGL_ENABLE_FBDEV=ON \
+	    -DMUSICRAT_LVGL_ENABLE_SDL=OFF \
+	    -D_EVL_SDK=ON
