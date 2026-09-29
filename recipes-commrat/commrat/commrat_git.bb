@@ -9,15 +9,19 @@ DESCRIPTION = "CommRaT: C++20 real-time communication framework over RACK/TiMS w
 MAINTAINER = "Matthias Haase"
 LICENSE = "GPL-2.0-or-later"
 
-SRC_URI = "git://github.com/mattih11/CommRaT.git;protocol=https;branch=feature/mailbox-cleanup \
+SRC_URI = "git://github.com/mattih11/CommRaT.git;protocol=https;branch=main \
            file://debian/"
-SRCREV = "ddfad95002d39773a1be9183ca71a71a7bb15c5a"
+SRCREV = "49f7449a80d3deb4b268b7ae625c0c8b61b38723"
 PV = "0.0+git${SRCPV}"
 S = "${WORKDIR}/git"
 
 DEPENDS = "sertial reflect-cpp corerat libevl"
 
 inherit dpkg
+
+# Declare the Debian development package as a BitBake provider so
+# SDK_INSTALL += "libcommrat-dev" resolves correctly.
+PROVIDES += "libcommrat-dev"
 
 do_prepare_build() {
     cp -Trl -- "${WORKDIR}/debian" "${S}/debian"
