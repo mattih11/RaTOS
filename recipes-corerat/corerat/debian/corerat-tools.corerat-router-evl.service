@@ -1,7 +1,8 @@
 [Unit]
-Description=CoreRaT EVL Name-Service Router
+Description=CoreRaT EVL Router
 Documentation=https://github.com/ratos-project/corerat
 After=local-fs.target
+Conflicts=corerat-router-tcp.service corerat-tools.service
 
 [Service]
 Type=simple

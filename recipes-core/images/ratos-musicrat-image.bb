@@ -12,7 +12,8 @@ ISAR_RELEASE_CMD = "git -C ${LAYERDIR_ratos} describe --tags \
 DESCRIPTION = "RaTOS MusicRaT image - EVL, CommRaT, and headless MusicRaT"
 HOSTNAME = "ratos-musicrat"
 
-DEPENDS = "linux-xenomai-4 libevl reflect-cpp sertial corerat commrat musicrat \
+DEPENDS = "linux-xenomai-4 libevl efibootguard \
+           reflect-cpp sertial corerat commrat musicrat \
            sshd-regen-keys expand-on-first-boot"
 
 IMAGE_PREINSTALL += " \

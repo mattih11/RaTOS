@@ -24,6 +24,7 @@ inherit dpkg
 PROVIDES += "libcorerat-dev corerat-tools"
 
 do_prepare_build() {
+    rm -rf -- "${S}/debian"
     cp -Trl -- "${WORKDIR}/debian" "${S}/debian"
     chmod +x "${S}/debian/rules"
 }

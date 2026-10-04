@@ -7,16 +7,10 @@ repo_dir=$(cd -- "${script_dir}/.." && pwd)
 
 memory_limit=${RATOS_BUILD_MEMORY_LIMIT:-24g}
 swap_limit=${RATOS_BUILD_SWAP_LIMIT:-28g}
-board=${1:-${RATOS_BUILD_BOARD:-container-amd64}}
-
-if [[ $# -gt 1 || ! -f "${repo_dir}/kas/board/${board}.yaml" ]]; then
-    echo "Usage: $0 [board]" >&2
-    echo "Unknown or invalid board: ${board}" >&2
-    exit 2
-fi
 
 cd "${repo_dir}"
 exec kas-container \
     --runtime-args "--memory=${memory_limit} --memory-swap=${swap_limit}" \
-    --isar build \
-    "kas.yaml:kas/board/${board}.yaml:kas/target/musicrat.yaml"
+    --isar shell \
+    kas.yaml:kas/board/container-amd64.yaml \
+    -c "bitbake -c populate_sdk ratos-dev-image"

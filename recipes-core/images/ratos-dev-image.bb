@@ -56,6 +56,13 @@ IMAGE_INSTALL += " \
 
 ROOTFS_FEATURES:remove = "generate-sbom"
 
+# Development dependencies track Debian updates. Refresh all configured package
+# sources so SDK generation does not use stale bootstrap package versions.
+rootfs_install_pkgs_update() {
+    sudo -E chroot '${ROOTFSDIR}' /usr/bin/apt-get update \
+        -o APT::Get::List-Cleanup="0"
+}
+
 # Write /etc/hostname to suppress systemd-firstboot prompt during image build
 set_hostname() {
     echo "${HOSTNAME}" | sudo tee "${ROOTFSDIR}/etc/hostname" > /dev/null

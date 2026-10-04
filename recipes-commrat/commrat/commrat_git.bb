@@ -11,7 +11,7 @@ LICENSE = "GPL-2.0-or-later"
 
 SRC_URI = "git://github.com/mattih11/CommRaT.git;protocol=https;branch=main \
            file://debian/"
-SRCREV = "49f7449a80d3deb4b268b7ae625c0c8b61b38723"
+SRCREV = "4f7d8407c35f572e2ae48416a7bef7314f84f337"
 PV = "0.0+git${SRCPV}"
 S = "${WORKDIR}/git"
 

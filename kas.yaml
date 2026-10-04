@@ -29,6 +29,7 @@ repos:
     commit: 9792d18e9334b3cec72e2ade6a1065084c0c24d6
     layers:
       meta:
+      meta-isar:
 
   isar-cip-core:
     url: https://gitlab.com/cip-project/cip-core/isar-cip-core.git

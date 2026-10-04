@@ -3,12 +3,10 @@ Description=CoreRaT TCP Router
 Documentation=https://github.com/ratos-project/corerat
 After=network.target
 Wants=network.target
+Conflicts=corerat-router-evl.service
 
 [Service]
 Type=simple
 ExecStart=/usr/bin/corerat-router-tcp
 Restart=on-failure
 RestartSec=5s
-
-[Install]
-WantedBy=multi-user.target

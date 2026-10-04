@@ -1,0 +1,13 @@
+#!/bin/sh
+set -e
+
+if [ "$1" = "configure" ]; then
+    deb-systemd-helper disable corerat-tools.service >/dev/null || true
+    if [ -d /run/systemd/system ]; then
+        deb-systemd-invoke stop corerat-tools.service >/dev/null || true
+    fi
+fi
+
+#DEBHELPER#
+
+exit 0
