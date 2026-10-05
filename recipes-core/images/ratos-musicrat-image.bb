@@ -14,11 +14,11 @@ HOSTNAME = "ratos-musicrat"
 
 DEPENDS = "linux-xenomai-4 libevl efibootguard \
            reflect-cpp sertial corerat commrat musicrat \
-           sshd-regen-keys expand-on-first-boot"
+           musicrat-discovery sshd-regen-keys expand-on-first-boot"
 
 IMAGE_PREINSTALL += " \
     bash-completion vim \
-    net-tools iputils-ping ssh \
+    net-tools iputils-ping openssh-server \
     rsync cmake \
     dbus"
 
@@ -28,6 +28,7 @@ IMAGE_INSTALL += " \
     libcorerat-dev corerat-tools \
     libcommrat-dev \
     musicrat libmusicrat-dev musicrat-examples \
+    musicrat-discovery \
     sshd-regen-keys expand-on-first-boot"
 
 IMAGE_INSTALL:append:xenomai4 = " libevl-test"
