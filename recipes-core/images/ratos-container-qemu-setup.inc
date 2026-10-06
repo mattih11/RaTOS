@@ -20,11 +20,15 @@ set_hostname() {
 
 configure_wired_networking() {
     sudo mkdir -p "${ROOTFSDIR}/etc/systemd/network"
-    printf '[Match]\nType=ether\n\n[Network]\nDHCP=ipv4\n' | \
+    printf '[Match]\nType=ether\n\n[Network]\nDHCP=ipv4\nLinkLocalAddressing=yes\n' | \
         sudo tee "${ROOTFSDIR}/etc/systemd/network/10-wired-dhcp.network" > /dev/null
     sudo mkdir -p "${ROOTFSDIR}/etc/systemd/system/multi-user.target.wants"
     sudo ln -sf /usr/lib/systemd/system/systemd-networkd.service \
         "${ROOTFSDIR}/etc/systemd/system/multi-user.target.wants/systemd-networkd.service"
+    sudo ln -sf /usr/lib/systemd/system/systemd-resolved.service \
+        "${ROOTFSDIR}/etc/systemd/system/multi-user.target.wants/systemd-resolved.service"
+    sudo ln -sf /run/systemd/resolve/stub-resolv.conf \
+        "${ROOTFSDIR}/etc/resolv.conf"
 }
 
 configure_sshd() {

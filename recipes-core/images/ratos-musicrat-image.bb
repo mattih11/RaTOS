@@ -21,7 +21,7 @@ IMAGE_PREINSTALL += " \
     iproute2 net-tools iputils-ping pciutils openssh-server \
     alsa-utils firmware-sof-signed \
     rsync cmake \
-    dbus"
+    dbus systemd-resolved"
 
 IMAGE_INSTALL += " \
     libevl \
