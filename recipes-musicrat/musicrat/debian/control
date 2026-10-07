@@ -17,7 +17,8 @@ Build-Depends: debhelper-compat (= 13),
                libavutil-dev,
                libswresample-dev,
                librubberband-dev,
-               libdrm-dev
+               libdrm-dev,
+               libasound2-dev
 Standards-Version: 4.6.0
 
 Package: musicrat

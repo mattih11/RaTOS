@@ -19,7 +19,7 @@ DEPENDS = "linux-xenomai-4 libevl efibootguard \
 IMAGE_PREINSTALL += " \
     bash-completion vim \
     iproute2 net-tools iputils-ping pciutils openssh-server \
-    alsa-utils firmware-sof-signed \
+    alsa-utils firmware-sof-signed firmware-intel-graphics \
     rsync cmake \
     dbus systemd-resolved"
 
