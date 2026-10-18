@@ -32,7 +32,7 @@ IMAGE_PREINSTALL += " \
     build-essential cmake ninja-build pkg-config \
     libflac-dev libmpg123-dev \
     libavformat-dev libavcodec-dev libavutil-dev libswresample-dev \
-    librubberband-dev libdrm-dev \
+    librubberband-dev libdrm-dev libasound2-dev \
     nodejs npm \
     g++ gdb valgrind \
     git ca-certificates curl \

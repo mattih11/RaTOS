@@ -12,10 +12,10 @@ LICENSE = "GPL-2.0-or-later"
 SRC_URI = "git://github.com/mattih11/MusicRaT.git;protocol=https;branch=main;name=musicrat;destsuffix=git \
            git://github.com/lvgl/lvgl.git;protocol=https;branch=release/v9.6;name=lvgl;destsuffix=lvgl \
            file://debian/"
-SRCREV_musicrat = "a6c50c19bcb40df5ad8df46c6f37e686879862d3"
+SRCREV_musicrat = "f2d4688d2378bd6178c8a5ede476f6d3e59352e6"
 SRCREV_lvgl = "1093217a21639868a0014193c4d40edfcadee8ad"
 SRCREV_FORMAT = "musicrat_lvgl"
-PV = "1.0.1"
+PV = "1.0.1+git1"
 S = "${WORKDIR}/git"
 
 DEPENDS = "commrat corerat sertial reflect-cpp libevl"

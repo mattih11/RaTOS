@@ -1,3 +1,10 @@
+musicrat (1.0.1+git1) trixie; urgency=medium
+
+  * Pin bounded ALSA/PipeWire pre-roll and starvation recovery.
+  * Include updated hardware-validation and platform-clock guidance.
+
+ -- Matthias Haase <mattihaase@proton.me>  Sun, 18 Oct 2026 16:00:00 +0000
+
 musicrat (1.0.1) trixie; urgency=medium
 
   * Add evdev touchscreen input support to LVGL display modules.

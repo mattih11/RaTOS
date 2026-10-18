@@ -144,6 +144,33 @@ podman tag $(podman images -q | head -1) ratos-dev-image:latest
 podman run -it --rm -v $PWD:/workspace ratos-dev-image:latest
 ```
 
+## MusicRaT SDK and Image Release Gates
+
+Before building a MusicRaT release image, require clean CoreRaT, CommRaT,
+MusicRaT, and RaTOS source worktrees and verify that each release revision is
+published upstream. Pin the exact dependency commits in their recipes; do not
+substitute `${AUTOREV}`, temporary branches, or local header/library overlays.
+
+The current stabilization pins are CoreRaT
+`db1107e837172e3668b1cca7656652e02f25187b`, CommRaT
+`9aeea45c70099045dea17f55f905b324da1285ff`, and MusicRaT
+`f2d4688d2378bd6178c8a5ede476f6d3e59352e6`. Record the RaTOS commit alongside
+these pins when publishing SDK/image artifacts.
+
+Regenerate the SDK with `scripts/build-ratos-sdk.sh` and inspect its target
+headers, CMake exports, ALSA pkg-config metadata, and library before
+cross-building MusicRaT without overlays. Debian ALSA development files are
+included through `SDK_PREINSTALL`; recipe-built stack packages use `SDK_INSTALL`.
+Only after that check succeeds, build with
+`scripts/build-musicrat-image.sh odroid-h4`. Rebooted installed-example validation
+and sustained physical audio tests are separate gates, not implied by a
+successful SDK or image build. Do not overwrite or reboot a live H4 demo without
+explicit approval.
+
+The MusicRaT repository's `docs/EVL_AND_RATOS.md` describes repeatable runtime
+checks and `docs/HARDWARE_VALIDATION.md` records the limits of development
+evidence.
+
 ## Project Structure
 
 ```
