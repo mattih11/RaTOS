@@ -1,3 +1,10 @@
+musicrat (1.0.1) trixie; urgency=medium
+
+  * Add evdev touchscreen input support to LVGL display modules.
+  * Configure the Odroid H4 graph for its stable USB touchscreen path.
+
+ -- Matthias Haase <mattihaase@proton.me>  Sun, 18 Oct 2026 14:27:32 +0000
+
 musicrat (1.0.0+git1) trixie; urgency=low
 
   * Initial headless RaTOS packaging.
