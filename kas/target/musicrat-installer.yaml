@@ -2,13 +2,15 @@
 # RaTOS Real-Time OS - attended MusicRaT installer
 #
 # Composes with the Odroid H4 board and ISAR installer image fragment.
-# The installer embeds the MusicRaT WIC and prompts before writing a disk.
+# The installer embeds the A/B MusicRaT WIC and prompts before writing a disk.
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 
 header:
   version: 14
+  includes:
+    - musicrat-swupdate.yaml
 
 target: mc:isar-installer:isar-image-installer
 
@@ -28,6 +30,6 @@ local_conf_header:
     TARGET_BOOTSTRAPPER_TASK_deploy-image[effort] ?= "2"
 
   musicrat_installer: |
-    INSTALLER_TARGET_IMAGE = "ratos-musicrat-image"
-    INSTALLER_TARGET_IMAGES = "ratos-musicrat-image"
+    INSTALLER_TARGET_IMAGE = "ratos-musicrat-image-swupdate"
+    INSTALLER_TARGET_IMAGES = "ratos-musicrat-image-swupdate"
     TARGET_BOOTSTRAPPER_TTY_SERVICES ?= "getty@tty1 serial-getty@ttyS0"

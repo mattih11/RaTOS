@@ -3,7 +3,9 @@
 RaTOS is an ISAR-based Debian Trixie image running a Xenomai 4 / EVL real-time kernel.
 It targets **amd64 / x86-64** hardware and uses **EFI Boot Guard** (from
 [isar-cip-core](https://gitlab.com/cip-project/cip-core/isar-cip-core)) as bootloader.
-A/B rootfs OTA updates are supported via **SWUpdate**.
+A/B rootfs OTA updates are available through the explicit **SWUpdate** image
+targets. Ordinary development images, including `ratos-musicrat-image`, use a
+single root partition and cannot accept A/B updates without a one-time reflash.
 
 A developer container image is also produced (docker-archive) with all RaTOS libraries and
 the EVL toolchain pre-installed.
@@ -37,6 +39,7 @@ you are working on.
 | 3 | `ratos-ratgui-image` | `kas.yaml:kas/board/<board>.yaml:kas/target/ratgui.yaml` | RatGUI development — full RT stack pre-installed |
 | 4 | `ratos-image` | `kas.yaml:kas/board/<board>.yaml` | Production / QA — full stack |
 | — | `ratos-image-swupdate` | `kas.yaml:kas/board/<board>.yaml:kas/opt/swupdate.yaml` | Production with A/B OTA (extends layer 4) |
+| — | `ratos-musicrat-image-swupdate` | `kas.yaml:kas/board/odroid-h4.yaml:kas/target/musicrat-swupdate.yaml` | MusicRaT with A/B OTA |
 | — | `ratos-dev-image` | `kas.yaml:kas/board/container-amd64.yaml` | Dev container — full stack + build toolchain, SDK |
 
 Replace `<board>` with the board overlay from `kas/board/` that matches your hardware.
@@ -127,14 +130,24 @@ bmaptool copy build/tmp/deploy/images/<board>/ratos-image-ratos-<board>.wic /dev
 
 ## OTA Update
 
-Copy the `.swu` to the running device and apply:
+The MusicRaT installer now embeds the **A/B-compatible** image by default:
 
 ```bash
-scp ratos-image-swupdate*.swu root@<device>:
-ssh root@<device> swupdate -i ratos-image-swupdate*.swu
-# Device reboots into the new slot; confirm update:
-ssh root@<device> bg_setenv -c
+scripts/build-musicrat-image.sh odroid-h4 ab
+scripts/build-musicrat-installer.sh
 ```
+
+This produces the initial A/B disk image, a signed `.swu` bundle, and an
+attended installer stick carrying the A/B disk image. The installer prompts
+before erasing the selected destination disk. Existing single-root H4 systems
+need a backup and this one-time reflash; installing SWUpdate alone is not a
+migration. No physical disk is written by either build command.
+
+See [MusicRaT A/B deployment](docs/musicrat-ab-updates.md) for artifact names,
+layout, update/confirmation steps, persistence, and validation requirements.
+Development signing certificates and the default root password must be replaced
+before production use. Updates require an explicit reboot and health check
+before `bg_setenv -c`; applying a bundle alone is not successful deployment.
 
 ## Load the Developer Container
 
@@ -260,7 +273,7 @@ that runs on every push to `main`, on version tags (`v*`), and on manual trigger
 
 | File | Description |
 |---|---|
-| `ratos-image-odroid-h4.wic.gz` | Full A/B EFI disk image (compressed) |
+| `ratos-image-odroid-h4.wic.gz` | Single-root EFI disk image (A/B requires an explicit SWUpdate target) |
 
 ### Triggering a release
 

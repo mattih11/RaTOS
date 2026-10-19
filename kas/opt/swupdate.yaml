@@ -37,3 +37,4 @@ local_conf_header:
     PREFERRED_PROVIDER_swupdate-certificates ??= "swupdate-certificates-snakeoil"
     PREFERRED_PROVIDER_swupdate-signer ??= "swupdate-signer-cms"
     SWU_HW_COMPAT = "ratos-1.0"
+    MACHINE_HW_VERSION = "ratos-1.0"

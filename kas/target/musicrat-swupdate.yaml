@@ -1,0 +1,12 @@
+#
+# RaTOS Real-Time OS - MusicRaT A/B image and signed SWUpdate bundle
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+header:
+  version: 14
+  includes:
+    - ../opt/swupdate.yaml
+
+target: ratos-musicrat-image-swupdate

@@ -14,23 +14,6 @@ COMPATIBLE_MACHINE = "odroid-h4"
 
 require recipes-core/images/ratos-image.bb
 
-# Locally-built packages added by swupdate.inc — must be declared so bitbake
-# builds and deploys them to isar-apt before do_rootfs_install runs.
-DEPENDS += " \
-    swupdate-handler-roundrobin \
-    swupdate-config \
-    immutable-rootfs \
-    journald-config \
-    move-homedir-var \
-    "
-
-# Pull in SWUpdate integration from isar-cip-core:
-#  - inherits read-only-rootfs (squashfs default)
-#  - adds IMAGE_FSTYPES += " swu"
-#  - installs swupdate, swupdate-handler-roundrobin, swupdate-config, efibootguard-tools
-include recipes-core/images/swupdate.inc
+require recipes-core/images/ratos-swupdate.inc
 
 DESCRIPTION = "RaTOS real-time image with SWUpdate A/B OTA support"
-
-# A/B partitions have fixed sizes — partition expansion on first boot is not needed
-IMAGE_INSTALL:remove = "expand-on-first-boot"
